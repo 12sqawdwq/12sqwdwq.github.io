@@ -141,7 +141,7 @@
         .tech-item { background: rgba(255,255,255,0.03); border-radius: 6px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; transition: 0.2s; cursor: help; }
         .tech-item:hover { background: rgba(255,255,255,0.08); transform: scale(1.1); }
 
-        .social-row { display: flex; justify-content: center; gap: 1rem; margin-top: auto; margin-bottom: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); }
+        .social-row { display: flex; justify-content: center; gap: 0.8rem; margin-top: auto; margin-bottom: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; }
         .social-btn { color: var(--subtext0); font-size: 1.4rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: rgba(255,255,255,0.03); text-decoration: none; }
         .social-btn:hover { background: rgba(137, 180, 250, 0.15); color: var(--blue); transform: translateY(-3px); }
 
@@ -284,9 +284,12 @@
                                 </div>
                             </div>
                             <div class="social-row">
-                                <a href="https://github.com/12sqawdwq" target="_blank" class="social-btn"><i class="devicon-github-original"></i></a>
-                                <a href="#" class="social-btn"><i class="devicon-twitter-original"></i></a>
-                                <a href="mailto:102450592zzy@gmail.com" class="social-btn"><i class="ph-fill ph-envelope"></i></a>
+                                <a href="https://github.com/12sqawdwq" target="_blank" class="social-btn" title="GitHub"><i class="devicon-github-original"></i></a>
+                                <a href="https://x.com/VictorLuci30819" target="_blank" class="social-btn" title="X (Twitter)"><i class="ph-fill ph-x-logo"></i></a>
+                                <a href="https://www.instagram.com/victor56809/" target="_blank" class="social-btn" title="Instagram"><i class="ph-fill ph-instagram-logo"></i></a>
+                                <a href="https://space.bilibili.com/501267267?spm_id_from=333.1387.0.0" target="_blank" class="social-btn" title="Bilibili"><i class="ph-fill ph-television-simple"></i></a>
+                                <a href="https://www.xiaohongshu.com/user/profile/6138400e000000001f0354ed?xsec_token=ABBVN9_b7jCEVcbVCwFVm9Tt34fYJJORKBZ_m2DnarKN0%3D&xsec_source=pc_search" target="_blank" class="social-btn" title="Xiaohongshu"><i class="ph-fill ph-book-bookmark"></i></a>
+                                <a href="mailto:102450592zzy@gmail.com" class="social-btn" title="Email"><i class="ph-fill ph-envelope"></i></a>
                             </div>
                             <div style="width: 100%;">
                                 <a href="mailto:102450592zzy@gmail.com" style="display:block; width: 100%; padding: 0.6rem; background: var(--surface0); border: 1px solid var(--glass-border); color: var(--text); border-radius: 0.5rem; text-align: center; text-decoration: none; font-weight: 600; font-size:0.9rem; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">Contact Me</a>
@@ -976,8 +979,6 @@ By tweaking the angle and the recursion depth, I was able to generate structures
                         // 自定义个性化报错
                         printToTerm(`<span style="color:var(--red); font-weight:bold; font-family:'JetBrains Mono';">ERROR: what the hell r u talking</span>`);
                         break;
-
-                        
                 }
             } 
         });
