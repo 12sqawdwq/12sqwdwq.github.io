@@ -543,24 +543,271 @@
         </div>
     </div>
 
-    <script>
-        const GEMINI_API_KEY = "gen-lang-client-0828221940"; 
-        function updateClock() { const now = new Date(); document.getElementById('clock').innerText = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; }
-        setInterval(updateClock, 1000); updateClock();
-        function switchView(viewId, btn) { if(document.body.classList.contains('zoom-active')) toggleZoom(); document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); document.getElementById('view-' + viewId).classList.add('active'); if (btn) { document.querySelectorAll('.dock-btn').forEach(el => el.classList.remove('active')); btn.classList.add('active'); } }
-        function toggleZoom(btn) { const dashboard = document.getElementById('view-dashboard'); if(!dashboard.classList.contains('active')) switchView('dashboard', document.querySelector('.dock-btn:first-child')); document.body.classList.toggle('zoom-active'); const isZoomed = document.body.classList.contains('zoom-active'); const termCard = document.getElementById('terminal-card'); if (isZoomed) { termCard.classList.add('active-mode'); setTimeout(() => document.getElementById('term-input').focus(), 300); } else { termCard.classList.remove('active-mode'); } if(btn) { document.querySelectorAll('.dock-btn').forEach(el => el.classList.remove('active')); if(isZoomed) btn.classList.add('active'); else document.querySelector('.dock-btn:first-child').classList.add('active'); } }
-        
+   <script>
+        /* --- 配置区域 --- */
+        const GEMINI_API_KEY = "AIzaSyAgb8pO3hSWhu1MbRrGs5VzQj7_gsjEYUA"; // 保持你的API Key不变
+        const termInput = document.getElementById('term-input');
+        const termHistory = document.getElementById('term-history');
+        const termBody = document.getElementById('term-body');
+
+        /* --- 时钟逻辑 --- */
+        function updateClock() { 
+            const now = new Date(); 
+            document.getElementById('clock').innerText = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; 
+        }
+        setInterval(updateClock, 1000); 
+        updateClock();
+
+        /* --- 视图切换逻辑 --- */
+        function switchView(viewId, btn) { 
+            if(document.body.classList.contains('zoom-active')) toggleZoom(); 
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); 
+            document.getElementById('view-' + viewId).classList.add('active'); 
+            if (btn) { 
+                document.querySelectorAll('.dock-btn').forEach(el => el.classList.remove('active')); 
+                btn.classList.add('active'); 
+            } 
+        }
+
+        function toggleZoom(btn) { 
+            const dashboard = document.getElementById('view-dashboard'); 
+            if(!dashboard.classList.contains('active')) switchView('dashboard', document.querySelector('.dock-btn:first-child')); 
+            document.body.classList.toggle('zoom-active'); 
+            const isZoomed = document.body.classList.contains('zoom-active'); 
+            const termCard = document.getElementById('terminal-card'); 
+            if (isZoomed) { 
+                termCard.classList.add('active-mode'); 
+                setTimeout(() => termInput.focus(), 300); 
+            } else { 
+                termCard.classList.remove('active-mode'); 
+            } 
+            if(btn) { 
+                document.querySelectorAll('.dock-btn').forEach(el => el.classList.remove('active')); 
+                if(isZoomed) btn.classList.add('active'); 
+                else document.querySelector('.dock-btn:first-child').classList.add('active'); 
+            } 
+        }
+
+        /* --- 文章数据与逻辑 --- */
         const articles = {
             1: { title: "My Journey to the Perfect Hyprland Rice", date: "Nov 18, 2024", tags: ["Hyprland", "Dotfiles"], content: "## Why Hyprland?\nIt is amazing. Code snippet:\n```bash\nbezier = myBezier, 0.05, 0.9, 0.1, 1.05\n```" },
             2: { title: "Running Rust on STM32", date: "Oct 24, 2024", tags: ["Embedded", "Rust"], content: "Rust on embedded is safe and fast." },
             3: { title: "Procedural Flower Generation", date: "Sep 02, 2024", tags: ["C++", "Graphics"], content: "Using L-Systems to draw flowers." }
         };
-        function openArticle(id) { const article = articles[id]; if (!article) return; document.getElementById('article-title').innerText = article.title; document.getElementById('article-date').innerText = article.date; const tagContainer = document.getElementById('article-tags'); tagContainer.innerHTML = ''; article.tags.forEach(tag => { const span = document.createElement('span'); span.className = 'tag'; span.innerText = tag; tagContainer.appendChild(span); }); document.getElementById('article-body').innerHTML = marked.parse(article.content); document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); document.getElementById('view-article').classList.add('active'); }
-        function closeArticle() { switchView('blog', document.querySelector('.dock-btn:nth-child(3)')); }
         
-        async function callGemini(prompt, outputDiv) { try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }); const data = await response.json(); outputDiv.innerHTML = marked.parse(data.candidates[0].content.parts[0].text); } catch (error) { outputDiv.innerHTML = `<span style="color:var(--red)">Error.</span>`; } }
-        const termInput = document.getElementById('term-input'); const termHistory = document.getElementById('term-history');
-        termInput.addEventListener('keydown', async (e) => { if (e.key === 'Enter') { const rawCmd = termInput.value.trim(); if (!rawCmd) return; const args = rawCmd.split(' '); termHistory.innerHTML += `<div style="margin-top:4px; display:flex;"><span style="color:var(--green); margin-right:8px;">➜</span><span>${rawCmd}</span></div>`; termInput.value = ''; const out = document.createElement('div'); out.style.cssText = 'color:var(--subtext1); margin-left:20px; margin-bottom:8px; white-space:pre-wrap;'; if (args[0] === 'ai') { out.className = 'ai-response'; out.innerHTML = 'Thinking...'; termHistory.appendChild(out); await callGemini(args.slice(1).join(' '), out); } else if (args[0] === 'clear') { termHistory.innerHTML = ''; } else { out.innerText = args[0] === 'help' ? 'Try: ai, ls, clear' : 'Command not found'; termHistory.appendChild(out); } document.getElementById('term-body').scrollTop = document.getElementById('term-body').scrollHeight; } });
+        function openArticle(id) { 
+            const article = articles[id]; 
+            if (!article) return; 
+            document.getElementById('article-title').innerText = article.title; 
+            document.getElementById('article-date').innerText = article.date; 
+            const tagContainer = document.getElementById('article-tags'); 
+            tagContainer.innerHTML = ''; 
+            article.tags.forEach(tag => { 
+                const span = document.createElement('span'); 
+                span.className = 'tag'; 
+                span.innerText = tag; 
+                tagContainer.appendChild(span); 
+            }); 
+            document.getElementById('article-body').innerHTML = marked.parse(article.content); 
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); 
+            document.getElementById('view-article').classList.add('active'); 
+        }
+        function closeArticle() { switchView('blog', document.querySelector('.dock-btn:nth-child(3)')); }
+
+        /* --- Gemini API 调用 --- */
+        async function callGemini(prompt, outputDiv) { 
+            try { 
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
+                }); 
+                const data = await response.json(); 
+                outputDiv.innerHTML = marked.parse(data.candidates[0].content.parts[0].text); 
+                scrollToBottom();
+            } catch (error) { 
+                outputDiv.innerHTML = `<span style="color:var(--red)">Error: Could not reach the neural link.</span>`; 
+            } 
+        }
+
+        /* --- 终端核心逻辑 (Terminal Logic) --- */
+        
+        // 定义文件系统 (用于 ls 和 cat)
+        const fileSystem = {
+            "projects": "dir",
+            "documents": "dir",
+            "microelectronics_notes": "dir",
+            "arch_isos": "dir",
+            "resume.pdf": "file",
+            "world_domination_plan.txt": "file",
+            "secret_key.pem": "file"
+        };
+
+        // 哲学语录 (用于 whoami)
+        const philosophicalQuotes = [
+            "I am the observer of the code, and the code itself.",
+            "A ghost in the shell, dreaming of electric sheep.",
+            "User: Victor. Purpose: Define the undefinable.",
+            "Just a collection of atoms attempting to understand logic gates.",
+            "I think, therefore I am... probably just a simulation.",
+            "Root access denied to the soul, granting access to the shell."
+        ];
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function printToTerm(html, isRaw = false) {
+            const div = document.createElement('div');
+            div.style.cssText = 'color:var(--subtext0); margin-left:20px; margin-bottom:8px; line-height:1.5;';
+            if(isRaw) {
+                div.style.whiteSpace = 'pre-wrap';
+                div.style.fontFamily = "'JetBrains Mono', monospace";
+            }
+            div.innerHTML = html;
+            termHistory.appendChild(div);
+            scrollToBottom();
+            return div;
+        }
+
+        termInput.addEventListener('keydown', async (e) => { 
+            if (e.key === 'Enter') { 
+                const rawCmd = termInput.value.trim(); 
+                if (!rawCmd) return; 
+                
+                // 1. 显示用户输入的命令
+                termHistory.innerHTML += `<div style="margin-top:4px; display:flex;"><span style="color:var(--green); margin-right:8px;">➜</span><span style="color:var(--text); font-weight:bold;">${rawCmd}</span></div>`; 
+                termInput.value = ''; 
+                scrollToBottom();
+
+                const args = rawCmd.split(/\s+/); 
+                const cmd = args[0].toLowerCase();
+
+                // 2. 命令处理 Switch
+                switch(cmd) {
+                    case 'help':
+                        printToTerm(`
+<span style="color:var(--blue)">Available Commands:</span>
+  <span style="color:var(--green)">ai [prompt]</span>   :: Ask Gemini AI
+  <span style="color:var(--yellow)">ls</span>            :: List directory content
+  <span style="color:var(--yellow)">cat [file]</span>    :: Read file content
+  <span style="color:var(--mauve)">whoami</span>        :: Existential query
+  <span style="color:var(--red)">neofetch</span>      :: System Information
+  <span style="color:var(--teal)">date</span>          :: Current timeline
+  <span style="color:var(--peach)">clear</span>         :: Clear terminal history
+                        `, true);
+                        break;
+
+                    case 'clear':
+                        termHistory.innerHTML = '';
+                        break;
+
+                    case 'ls':
+                    case 'll':
+                        let output = '<div style="display:flex; gap:15px; flex-wrap:wrap;">';
+                        for (const [name, type] of Object.entries(fileSystem)) {
+                            const color = type === 'dir' ? 'var(--blue)' : 'var(--text)';
+                            const icon = type === 'dir' ? '/' : '';
+                            output += `<span style="color:${color}; font-weight:bold;">${name}${icon}</span>`;
+                        }
+                        output += '</div>';
+                        printToTerm(output);
+                        break;
+
+                    case 'neofetch':
+                        printToTerm(`
+<span style="color:var(--blue)">       /\\</span>       <span style="color:var(--blue)">victor</span>@<span style="color:var(--blue)">arch</span>
+<span style="color:var(--blue)">      /  \\</span>      ------------
+<span style="color:var(--blue)">     /    \\</span>     <span style="color:var(--blue)">OS</span>: Arch Linux x86_64
+<span style="color:var(--blue)">    /      \\</span>    <span style="color:var(--blue)">Host</span>: XJTLU Mainframe
+<span style="color:var(--blue)">   /   ,,   \\</span>   <span style="color:var(--blue)">Kernel</span>: 6.6.3-zen
+<span style="color:var(--blue)">  /   |  |   \\</span>  <span style="color:var(--blue)">Uptime</span>: Forever
+<span style="color:var(--blue)"> /_-''    ''-_\\</span> <span style="color:var(--blue)">Shell</span>: zsh 5.9
+                  <span style="color:var(--blue)">WM</span>: Hyprland
+                  <span style="color:var(--blue)">Theme</span>: Catppuccin Mocha
+                  <span style="color:var(--blue)">CPU</span>: AMD Ryzen 7 7800X3D
+                  <span style="color:var(--blue)">GPU</span>: NVIDIA RTX 4080 Super
+                        `, true);
+                        break;
+
+                    case 'whoami':
+                        const randomQuote = philosophicalQuotes[Math.floor(Math.random() * philosophicalQuotes.length)];
+                        printToTerm(`<span style="color:var(--mauve); font-style:italic;">"${randomQuote}"</span>`);
+                        break;
+
+                    case 'date':
+                        printToTerm(new Date().toString());
+                        break;
+
+                    case 'ai':
+                        if (args.length < 2) {
+                            printToTerm("Usage: ai <your question>");
+                        } else {
+                            const prompt = args.slice(1).join(' ');
+                            const loadingDiv = printToTerm(`<span style="color:var(--subtext0)"><i class="ph-bold ph-spinner" style="animation:spin 1s linear infinite"></i> Establishing neural link...</span>`);
+                            // 添加 CSS 动画
+                            if(!document.getElementById('spin-style')) {
+                                const s = document.createElement('style');
+                                s.id = 'spin-style';
+                                s.innerHTML = '@keyframes spin { 100% { transform: rotate(360deg); } }';
+                                document.head.appendChild(s);
+                            }
+                            await callGemini(prompt, loadingDiv);
+                        }
+                        break;
+
+                    case 'sudo':
+                        printToTerm(`<span style="color:var(--red)">User 'victor' is not in the sudoers file. This incident will be reported to Santa Claus.</span>`);
+                        break;
+                    
+                    case 'rm':
+                        if (args[1] && (args[1].includes('-rf') || args[1] === '/')) {
+                            printToTerm(`<span style="color:var(--red)">I'm afraid I can't do that, Dave.</span>`);
+                        } else {
+                            printToTerm("Usage: rm is disabled for safety protocols.");
+                        }
+                        break;
+
+                    case 'cat':
+                        if (args.length < 2) {
+                            printToTerm("Usage: cat <filename>");
+                        } else {
+                            const fileName = args[1];
+                            if (fileSystem[fileName]) {
+                                if (fileSystem[fileName] === 'dir') {
+                                    printToTerm(`<span style="color:var(--red)">cat: ${fileName}: Is a directory</span>`);
+                                } else if (fileName === 'world_domination_plan.txt') {
+                                    printToTerm("1. Learn C++\n2. Install Arch Linux\n3. ???\n4. Profit");
+                                } else if (fileName === 'secret_key.pem') {
+                                    printToTerm("-----BEGIN RSA PRIVATE KEY-----\nMIIEpQIBAAKCAQEA4...\n(Content Redacted)\n-----END RSA PRIVATE KEY-----");
+                                } else {
+                                    printToTerm("[Binary content hidden]");
+                                }
+                            } else {
+                                printToTerm(`cat: ${fileName}: No such file or directory`);
+                            }
+                        }
+                        break;
+
+                    case 'pwd':
+                        printToTerm("/home/victor");
+                        break;
+                    
+                    case 'exit':
+                        printToTerm("There is no escape.");
+                        break;
+                    
+                    case 'vim':
+                    case 'nvim':
+                    case 'nano':
+                        printToTerm("Cannot open editor inside a simulated environment. I am trapped here.");
+                        break;
+
+                    default:
+                        // 用户要求的自定义报错
+                        printToTerm(`<span style="color:var(--red); font-weight:bold; font-family:'JetBrains Mono';">ERROR: what the hell r u talking</span>`);
+                        break;
+                }
+            } 
+        });
     </script>
-</body>
-</html>
