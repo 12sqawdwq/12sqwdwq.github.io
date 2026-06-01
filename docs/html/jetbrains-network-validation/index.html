@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN" xml:lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Prepared for JetBrains / SRE / AWS investigation" />
+  <meta name="dcterms.date" content="2026-04-29" />
+  <title>JetBrains Remote Development Download Network Validation</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="report.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">JetBrains Remote Development Download Network
+Validation</h1>
+<p class="subtitle">Huawei vs 5090, Asia/Shanghai, 2026-04-29</p>
+<p class="author">Prepared for JetBrains / SRE / AWS investigation</p>
+<p class="date">2026-04-29</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#摘要" id="toc-摘要"><span
+class="toc-section-number">1</span> 1. 摘要</a></li>
+<li><a href="#测试范围" id="toc-测试范围"><span
+class="toc-section-number">2</span> 2. 测试范围</a>
+<ul>
+<li><a href="#执行时间" id="toc-执行时间"><span
+class="toc-section-number">2.1</span> 2.1 执行时间</a></li>
+<li><a href="#原始命令" id="toc-原始命令"><span
+class="toc-section-number">2.2</span> 2.2 原始命令</a></li>
+</ul></li>
+<li><a href="#关键结果" id="toc-关键结果"><span
+class="toc-section-number">3</span> 3. 关键结果</a></li>
+<li><a href="#的-cloudfront-观测" id="toc-的-cloudfront-观测"><span
+class="toc-section-number">4</span> 4. 5090 的 CloudFront 观测</a></li>
+<li><a href="#huawei-的-dns-观测" id="toc-huawei-的-dns-观测"><span
+class="toc-section-number">5</span> 5. Huawei 的 DNS 观测</a>
+<ul>
+<li><a href="#huawei-补充重试jetbrains-中国加速域名"
+id="toc-huawei-补充重试jetbrains-中国加速域名"><span
+class="toc-section-number">5.1</span> 5.1 Huawei 补充重试：JetBrains
+中国加速域名</a></li>
+</ul></li>
+<li><a href="#dns-结果摘要" id="toc-dns-结果摘要"><span
+class="toc-section-number">6</span> 6. DNS 结果摘要</a>
+<ul>
+<li><a href="#huawei" id="toc-huawei"><span
+class="toc-section-number">6.1</span> 6.1 Huawei</a></li>
+<li><a href="#section" id="toc-section"><span
+class="toc-section-number">6.2</span> 6.2 5090</a></li>
+</ul></li>
+<li><a href="#原始文件清单" id="toc-原始文件清单"><span
+class="toc-section-number">7</span> 7. 原始文件清单</a></li>
+<li><a href="#终端输出附录" id="toc-终端输出附录"><span
+class="toc-section-number">8</span> 8. 终端输出附录</a>
+<ul>
+<li><a href="#huawei-curl-summary" id="toc-huawei-curl-summary"><span
+class="toc-section-number">8.1</span> 8.1 Huawei: curl summary</a></li>
+<li><a href="#huawei-curl-error" id="toc-huawei-curl-error"><span
+class="toc-section-number">8.2</span> 8.2 Huawei: curl error</a></li>
+<li><a href="#huawei-external-ip-and-resolver"
+id="toc-huawei-external-ip-and-resolver"><span
+class="toc-section-number">8.3</span> 8.3 Huawei: external IP and
+resolver</a></li>
+<li><a href="#huawei-system-snapshot"
+id="toc-huawei-system-snapshot"><span
+class="toc-section-number">8.4</span> 8.4 Huawei: system
+snapshot</a></li>
+<li><a href="#curl-timing" id="toc-curl-timing"><span
+class="toc-section-number">8.5</span> 8.5 5090: curl timing</a></li>
+<li><a href="#cloudfront-headers-from-curl.log"
+id="toc-cloudfront-headers-from-curl.log"><span
+class="toc-section-number">8.6</span> 8.6 5090: CloudFront headers from
+<code>curl.log</code></a></li>
+<li><a href="#connection-target-from-curl.log"
+id="toc-connection-target-from-curl.log"><span
+class="toc-section-number">8.7</span> 8.7 5090: connection target from
+<code>curl.log</code></a></li>
+<li><a href="#external-ip-and-resolver"
+id="toc-external-ip-and-resolver"><span
+class="toc-section-number">8.8</span> 8.8 5090: external IP and
+resolver</a></li>
+<li><a href="#system-snapshot" id="toc-system-snapshot"><span
+class="toc-section-number">8.9</span> 8.9 5090: system snapshot</a></li>
+<li><a href="#full-dns-command-output"
+id="toc-full-dns-command-output"><span
+class="toc-section-number">8.10</span> 8.10 Full DNS command output</a>
+<ul>
+<li><a href="#huawei-1" id="toc-huawei-1"><span
+class="toc-section-number">8.10.1</span> Huawei</a></li>
+<li><a href="#section-1" id="toc-section-1"><span
+class="toc-section-number">8.10.2</span> 5090</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+<h1 data-number="1" id="摘要"><span
+class="header-section-number">1</span> 1. 摘要</h1>
+<p>本次在两台服务器上按 JetBrains 提供的命令验证同一个下载目标：</p>
+<p><code>https://download.jetbrains.com/idea/code-with-me/JetBrainsClient-253.20558.58.jbr.win.zip</code></p>
+<p>结论需要分开看：</p>
+<ul>
+<li><strong>Huawei</strong>：不是下载慢，而是系统 DNS
+解析失败。<code>curl</code> 两轮均以 <code>exit_code=6</code>
+结束，错误为
+<code>Could not resolve host: download.jetbrains.com</code>。但同机上
+<code>dig @8.8.8.8</code> 和 <code>dig @1.1.1.1</code> 能解析
+JetBrains/CloudFront 记录，说明问题集中在本机 systemd-resolved/uplink
+resolver 路径，而不是权威 DNS 或公网 DNS 完全不可用。</li>
+<li><strong>5090</strong>：下载成功，但速度明显偏慢。两轮下载
+749,537,454 bytes 的文件分别耗时 <strong>340s</strong> 和
+<strong>334.902149s</strong>，折算约 <strong>2.1 MiB/s / 17.9
+Mbps</strong>。</li>
+<li><strong>5090 的 CloudFront 行为很关键</strong>：初始
+<code>download.jetbrains.com</code> 302 响应显示
+<code>x-geocode: HK</code> 且
+<code>x-amz-cf-pop: HKG1-P1</code>，但重定向后的实际文件
+<code>download-cdn.jetbrains.com</code> 来自
+<strong><code>x-amz-cf-pop: SFO53-P5</code></strong>。也就是说入口识别为
+HK，但实际大文件 CDN POP 落到了 SFO。</li>
+<li>两台机器均未发现 <code>HTTP_PROXY</code> / <code>HTTPS_PROXY</code>
+/ <code>ALL_PROXY</code> 等代理环境变量。</li>
+<li>两台机器均显示 IPv6 路由不可达；5090 可以解析 AAAA，但实际使用 IPv4
+连接。外部 IPv6 IP 查询失败。</li>
+</ul>
+<h1 data-number="2" id="测试范围"><span
+class="header-section-number">2</span> 2. 测试范围</h1>
+<h2 data-number="2.1" id="执行时间"><span
+class="header-section-number">2.1</span> 2.1 执行时间</h2>
+<ul>
+<li>Huawei：2026-04-29 23:34:57 - 23:35:17 CST</li>
+<li>5090：2026-04-29 23:35:02 - 23:46:18 CST</li>
+</ul>
+<h2 data-number="2.2" id="原始命令"><span
+class="header-section-number">2.2</span> 2.2 原始命令</h2>
+<p>第一轮：</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-vL</span> <span class="st">&quot;https://download.jetbrains.com/idea/code-with-me/JetBrainsClient-253.20558.58.jbr.win.zip&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-o</span> JetBrainsClient-253.20558.58.jbr.win.zip <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span><span class="op">&gt;</span> check-speed-idea.log</span></code></pre></div>
+<p>第二轮：</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-vL</span> <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-o</span> JetBrainsClient-253.20558.58.jbr.win.zip <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-w</span> <span class="st">&quot;\n</span><span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">DNS Lookup:    %{time_namelookup}s\n</span><span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">TCP Connect:   %{time_connect}s\n</span><span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">TLS Handshake: %{time_appconnect}s\n</span><span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="st">Pre-Transfer:  %{time_pretransfer}s\n</span><span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="st">TTFB:          %{time_starttransfer}s\n</span><span class="dt">\</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="st">Total Time:    %{time_total}s\n</span><span class="dt">\</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="st">Download Size: %{size_download} bytes\n</span><span class="dt">\</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="st">HTTP Code:     %{http_code}\n&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;https://download.jetbrains.com/idea/code-with-me/JetBrainsClient-253.20558.58.jbr.win.zip&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span><span class="op">&gt;</span> curl.log <span class="dt">\</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="op">&gt;</span> curl-times.txt</span></code></pre></div>
+<h1 data-number="3" id="关键结果"><span
+class="header-section-number">3</span> 3. 关键结果</h1>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th style="text-align: right;">Huawei</th>
+<th style="text-align: right;">5090</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第一轮 <code>curl</code> exit code</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>第一轮耗时</td>
+<td style="text-align: right;">4s</td>
+<td style="text-align: right;">340s</td>
+</tr>
+<tr>
+<td>第二轮 <code>curl</code> exit code</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>第二轮 Total Time</td>
+<td style="text-align: right;">3.909533s</td>
+<td style="text-align: right;">334.902149s</td>
+</tr>
+<tr>
+<td>第二轮 HTTP Code</td>
+<td style="text-align: right;">000</td>
+<td style="text-align: right;">200</td>
+</tr>
+<tr>
+<td>第二轮下载大小</td>
+<td style="text-align: right;">0 bytes</td>
+<td style="text-align: right;">749,537,454 bytes</td>
+</tr>
+<tr>
+<td>估算平均速度</td>
+<td style="text-align: right;">N/A, DNS failed</td>
+<td style="text-align: right;">~2.14 MiB/s / ~17.9 Mbps</td>
+</tr>
+<tr>
+<td>外部 IPv4</td>
+<td style="text-align: right;">113.44.57.56, via manual DNS bypass</td>
+<td style="text-align: right;">160.20.53.106</td>
+</tr>
+<tr>
+<td>外部 IPv6</td>
+<td style="text-align: right;">无 IPv6 路由 / 查询失败</td>
+<td style="text-align: right;">无 IPv6 路由 / 查询失败</td>
+</tr>
+<tr>
+<td>代理环境变量</td>
+<td style="text-align: right;">未发现</td>
+<td style="text-align: right;">未发现</td>
+</tr>
+<tr>
+<td>IPv6 路由</td>
+<td style="text-align: right;"><code>Network is unreachable</code></td>
+<td style="text-align: right;"><code>Network is unreachable</code></td>
+</tr>
+</tbody>
+</table>
+<h1 data-number="4" id="的-cloudfront-观测"><span
+class="header-section-number">4</span> 4. 5090 的 CloudFront 观测</h1>
+<p>5090 成功下载，但实际文件由 SFO CloudFront POP 返回：</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>阶段</th>
+<th>Host</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>初始请求</td>
+<td><code>download.jetbrains.com</code></td>
+<td>HTTP/2 302</td>
+</tr>
+<tr>
+<td>初始 POP</td>
+<td><code>download.jetbrains.com</code></td>
+<td><code>x-amz-cf-pop: HKG1-P1</code></td>
+</tr>
+<tr>
+<td>初始 geocode</td>
+<td><code>download.jetbrains.com</code></td>
+<td><code>x-geocode: HK</code></td>
+</tr>
+<tr>
+<td>重定向地址</td>
+<td><code>download-cdn.jetbrains.com</code></td>
+<td>JetBrainsClient zip</td>
+</tr>
+<tr>
+<td>实际文件 POP</td>
+<td><code>download-cdn.jetbrains.com</code></td>
+<td><code>x-amz-cf-pop: SFO53-P5</code></td>
+</tr>
+<tr>
+<td>实际文件 cache</td>
+<td><code>download-cdn.jetbrains.com</code></td>
+<td><code>Hit from cloudfront</code> in second run</td>
+</tr>
+<tr>
+<td>实际连接 IP</td>
+<td><code>download-cdn.jetbrains.com</code></td>
+<td><code>18.238.192.80</code> in second run</td>
+</tr>
+</tbody>
+</table>
+<p>这与 JetBrains/SRE 提到的现象一致：即使入口被识别为
+HK，实际大文件流量没有落到更近的 CloudFront 边缘节点，而是走到了海外 SFO
+POP。</p>
+<h1 data-number="5" id="huawei-的-dns-观测"><span
+class="header-section-number">5</span> 5. Huawei 的 DNS 观测</h1>
+<p>Huawei 的系统 resolver 失败，但直接指定公网 DNS 可以解析：</p>
+<ul>
+<li><code>/etc/resolv.conf</code> 指向
+<code>127.0.0.53</code>，systemd-resolved 的 eth0 uplink 是
+<code>100.125.1.250</code>。</li>
+<li><code>curl</code> 使用系统 resolver 解析
+<code>download.jetbrains.com</code> 失败。</li>
+<li><code>resolvectl query download.jetbrains.com</code>
+在补充排查中长时间无返回，已终止该补充命令。</li>
+<li><code>dig A/AAAA @8.8.8.8</code> 和 <code>dig A/AAAA @1.1.1.1</code>
+对 JetBrains 域名可以返回 CloudFront 记录。</li>
+<li>通过手工 <code>dig @8.8.8.8</code> 解析 IP 后，用
+<code>curl --resolve</code> 查询外部 IPv4，得到
+<code>113.44.57.56</code>。</li>
+</ul>
+<p>因此 Huawei 当前主问题更像 <strong>本机 DNS stub/uplink resolver
+链路异常</strong>，不能直接用于判断 JetBrains 下载 CDN
+的吞吐表现，除非先修复或绕过系统 DNS。</p>
+<h2 data-number="5.1" id="huawei-补充重试jetbrains-中国加速域名"><span
+class="header-section-number">5.1</span> 5.1 Huawei 补充重试：JetBrains
+中国加速域名</h2>
+<p>根据“华为云中国大陆服务器理论上应命中 JetBrains
+中国大陆加速服务”的判断，2026-04-30 00:13-00:40 CST
+又做了一轮更有耐心的补充测试。测试方法没有修改服务器 DNS
+配置，而是：</p>
+<ul>
+<li>对系统 resolver、Huawei 内部 DNS、AliDNS、114DNS、DNSPod、Google
+DNS、Cloudflare DNS 做多轮解析检查。</li>
+<li>系统 resolver 路径连续 3 轮
+<code>curl --retry 2</code>，每轮实际尝试 3 次，仍全部失败。</li>
+<li>当入口域名 <code>download.jetbrains.com</code> 能用外部 DNS
+解析后，用 <code>curl --resolve</code> 固定入口 IP，继续跟随 JetBrains
+的 302 跳转。</li>
+<li>这次确认 Huawei 会被 JetBrains 入口识别为
+<strong>CN</strong>，并被重定向到中国加速域名：</li>
+</ul>
+<pre class="text"><code>location: https://download-cdn.clf.jetbrains.com.cn/idea/code-with-me/JetBrainsClient-253.20558.58.jbr.win.zip...
+x-geocode: CN</code></pre>
+<p>关键结果如下：</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>测试项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getent ahostsv4 download.jetbrains.com</code></td>
+<td>失败，exit code 2</td>
+</tr>
+<tr>
+<td><code>resolvectl query download.jetbrains.com</code></td>
+<td>30s 超时，exit code 124</td>
+</tr>
+<tr>
+<td>系统 resolver <code>curl --retry 2</code></td>
+<td>3 轮均失败，错误仍为
+<code>Could not resolve host: download.jetbrains.com</code></td>
+</tr>
+<tr>
+<td>Huawei DNS <code>100.125.1.250</code></td>
+<td><code>dig</code> 对 JetBrains 域名超时，no servers could be
+reached</td>
+</tr>
+<tr>
+<td>AliDNS <code>223.5.5.5</code> 解析 CLF</td>
+<td><code>download-cdn.clf.jetbrains.com.cn -&gt; 119.0.68.16</code></td>
+</tr>
+<tr>
+<td>114DNS <code>114.114.114.114</code> 解析 CLF</td>
+<td><code>download-cdn.clf.jetbrains.com.cn -&gt; 36.153.95.129</code></td>
+</tr>
+<tr>
+<td>DNSPod <code>119.29.29.29</code> 解析 CLF</td>
+<td><code>download-cdn.clf.jetbrains.com.cn -&gt; 36.153.95.129</code></td>
+</tr>
+</tbody>
+</table>
+<p>完整下载测试中，AliDNS 固定解析路径可以成功下载完整文件：</p>
+<pre class="text"><code>Remote IP:     119.0.68.16
+HTTP Code:     200
+Download Size: 749537454 bytes
+Total Time:    567.845507s
+Speed:         1319968 bytes/s</code></pre>
+<p>折算速度约为 <strong>1.26 MiB/s / 10.6 Mbps</strong>。这说明 Huawei
+服务器确实能够命中 JetBrains 的中国加速域名，并且文件服务端实际为：</p>
+<pre class="text"><code>server: cloudflare
+cf-ray: ...-KWE</code></pre>
+<p>但这条路径在本次实测中并没有比 5090 更快。作为对照，114DNS 解析到
+<code>36.153.95.129</code> 后也进入了 HTTP/2 200 下载，但前 50
+秒稳定在约 <strong>1.2
+MiB/s</strong>，因此中止了后续长时间重复下载，避免继续消耗无意义的时间。</p>
+<p>补充结论是：<strong>“JetBrains 中国大陆加速路径存在，并且 Huawei
+会被重定向到该路径”这一点已经验证；但当前 Huawei 的系统 DNS
+仍阻塞正常下载，而绕过 DNS 后的 CLF 下载速度约 1.2-1.3
+MiB/s，并未表现出预期的高速。</strong></p>
+<h1 data-number="6" id="dns-结果摘要"><span
+class="header-section-number">6</span> 6. DNS 结果摘要</h1>
+<h2 data-number="6.1" id="huawei"><span
+class="header-section-number">6.1</span> 6.1 Huawei</h2>
+<ul>
+<li><code>download.jetbrains.com @8.8.8.8 A</code> -&gt;
+<code>3.165.11.66</code>, <code>3.165.11.38</code>,
+<code>3.165.11.5</code>, <code>3.165.11.103</code></li>
+<li><code>download.jetbrains.com @1.1.1.1 A</code> -&gt;
+<code>216.137.39.31</code>, <code>216.137.39.32</code>,
+<code>216.137.39.116</code>, <code>216.137.39.26</code></li>
+<li><code>download-cdn.jetbrains.com @8.8.8.8 A</code> -&gt;
+<code>3.173.254.86</code>, <code>3.173.254.99</code>,
+<code>3.173.254.26</code>, <code>3.173.254.118</code></li>
+<li><code>download-cdn.jetbrains.com @1.1.1.1 A</code> -&gt;
+<code>18.154.206.79</code>, <code>18.154.206.91</code>,
+<code>18.154.206.111</code>, <code>18.154.206.30</code>; observed one
+timeout before successful answer.</li>
+<li>AAAA 查询也返回 CloudFront IPv6 地址，但本机 IPv6 route
+不可达。</li>
+</ul>
+<h2 data-number="6.2" id="section"><span
+class="header-section-number">6.2</span> 6.2 5090</h2>
+<ul>
+<li><code>download.jetbrains.com @8.8.8.8/@1.1.1.1 A</code> -&gt;
+<code>54.230.70.27</code>, <code>54.230.70.78</code>,
+<code>54.230.70.88</code>, <code>54.230.70.109</code></li>
+<li><code>download-cdn.jetbrains.com @8.8.8.8/@1.1.1.1 A</code> -&gt;
+<code>13.35.190.21</code>, <code>13.35.190.61</code>,
+<code>13.35.190.64</code>, <code>13.35.190.99</code></li>
+<li><code>curl</code> 运行时系统 resolver 返回的
+<code>download-cdn.jetbrains.com</code> IPv4 是
+<code>18.238.192.80</code>, <code>18.238.192.105</code>,
+<code>18.238.192.40</code>, <code>18.238.192.117</code>，实际连接
+<code>18.238.192.80</code>。</li>
+<li>AAAA 查询返回 CloudFront IPv6 地址，但本机 IPv6 route 不可达。</li>
+</ul>
+<h1 data-number="7" id="原始文件清单"><span
+class="header-section-number">7</span> 7. 原始文件清单</h1>
+<p>所有原始文件已保存在本机目录：</p>
+<p><code>/home/ziyu/PROJECT/jetbrains-network-validation-20260429/raw/</code></p>
+<p>每台机器分别包含：</p>
+<ul>
+<li><code>check-speed-idea.log</code>：第一轮 <code>curl -vL</code>
+的完整 stderr。</li>
+<li><code>check-speed-idea.summary.txt</code>：第一轮命令、exit
+code、耗时、文件大小。</li>
+<li><code>curl.log</code>：第二轮 <code>curl -vL</code> 的完整
+stderr。</li>
+<li><code>curl-times.txt</code>：第二轮 <code>curl -w</code> timing
+输出。</li>
+<li><code>curl-times.summary.txt</code>：第二轮命令、exit
+code、耗时、文件大小。</li>
+<li><code>dns-results.txt</code>：JetBrains 要求的 8 条 <code>dig</code>
+命令完整输出。</li>
+<li><code>external-ip.txt</code>：外部 IPv4/IPv6 查询原始输出。</li>
+<li><code>system-info.txt</code>：系统、curl/dig
+版本、代理环境、路由、resolver 配置。</li>
+<li><code>resolver-extra.txt</code>：补充 resolver 状态。</li>
+</ul>
+<h1 data-number="8" id="终端输出附录"><span
+class="header-section-number">8</span> 8. 终端输出附录</h1>
+<p>以下附录只放关键终端输出，完整 verbose/progress 日志见第 7
+节原始文件。</p>
+<h2 data-number="8.1" id="huawei-curl-summary"><span
+class="header-section-number">8.1</span> 8.1 Huawei: curl summary</h2>
+<pre class="text"><code>curl -vL &quot;https://download.jetbrains.com/idea/code-with-me/JetBrainsClient-253.20558.58.jbr.win.zip&quot; \
+  -o JetBrainsClient-253.20558.58.jbr.win.zip \
+  2&gt; check-speed-idea.log
+
+exit_code=6
+started_epoch=1777476909
+ended_epoch=1777476913
+elapsed_seconds=4
+
+[file]</code></pre>
+<pre class="text"><code>
+DNS Lookup:    0.000000s
+TCP Connect:   0.000000s
+TLS Handshake: 0.000000s
+Pre-Transfer:  0.000000s
+TTFB:          0.000000s
+Total Time:    3.909533s
+Download Size: 0 bytes
+HTTP Code:     000</code></pre>
+<h2 data-number="8.2" id="huawei-curl-error"><span
+class="header-section-number">8.2</span> 8.2 Huawei: curl error</h2>
+<pre class="text"><code>  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0* Could not resolve host: download.jetbrains.com
+* Closing connection 0
+curl: (6) Could not resolve host: download.jetbrains.com</code></pre>
+<h2 data-number="8.3" id="huawei-external-ip-and-resolver"><span
+class="header-section-number">8.3</span> 8.3 Huawei: external IP and
+resolver</h2>
+<pre class="text"><code>$ printf &#39;[IPv4]\n&#39;; curl -4 -sS --max-time 30 https://api.ipify.org; printf &#39;\n\n[IPv6]\n&#39;; curl -6 -sS --max-time 30 https://api64.ipify.org; printf &#39;\n&#39;
+
+[IPv4]
+curl: (6) Could not resolve host: api.ipify.org
+
+
+[IPv6]
+curl: (6) Could not resolve host: api64.ipify.org
+
+
+[exit_code]=0
+
+$ curl --resolve checkip.amazonaws.com:443:52.76.181.204 https://checkip.amazonaws.com
+113.44.57.56
+
+$ curl --resolve ipinfo.io:443:34.117.59.81 https://ipinfo.io/ip
+113.44.57.56</code></pre>
+<pre class="text"><code>$ resolvectl status || systemd-resolve --status
+Global
+       LLMNR setting: no                  
+MulticastDNS setting: no                  
+  DNSOverTLS setting: no                  
+      DNSSEC setting: no                  
+    DNSSEC supported: no                  
+          DNS Domain: openstacklocal      
+                      tailcdd329.ts.net   
+          DNSSEC NTA: 10.in-addr.arpa     
+                      16.172.in-addr.arpa 
+                      168.192.in-addr.arpa
+                      17.172.in-addr.arpa 
+                      18.172.in-addr.arpa 
+                      19.172.in-addr.arpa 
+                      20.172.in-addr.arpa 
+                      21.172.in-addr.arpa 
+                      22.172.in-addr.arpa 
+                      23.172.in-addr.arpa 
+                      24.172.in-addr.arpa 
+                      25.172.in-addr.arpa 
+                      26.172.in-addr.arpa 
+                      27.172.in-addr.arpa 
+                      28.172.in-addr.arpa 
+                      29.172.in-addr.arpa 
+                      30.172.in-addr.arpa 
+                      31.172.in-addr.arpa 
+                      corp                
+                      d.f.ip6.arpa        
+                      home                
+                      internal            
+                      intranet            
+                      lan                 
+                      local               
+                      private             
+                      test                
+
+Link 10 (tailscale0)
+      Current Scopes: DNS                              
+DefaultRoute setting: no                               
+       LLMNR setting: no                               
+MulticastDNS setting: no                               
+  DNSOverTLS setting: no                               
+      DNSSEC setting: no                               
+    DNSSEC supported: no                               
+  Current DNS Server: 100.100.100.100                  
+         DNS Servers: 100.100.100.100                  
+          DNS Domain: tailcdd329.ts.net                
+                      ~0.e.1.a.c.5.1.1.a.7.d.f.ip6.arpa
+                      ~100.100.in-addr.arpa            
+                      ~101.100.in-addr.arpa            
+                      ~102.100.in-addr.arpa            
+                      ~103.100.in-addr.arpa            
+                      ~104.100.in-addr.arpa            
+                      ~105.100.in-addr.arpa            
+                      ~106.100.in-addr.arpa            
+                      ~107.100.in-addr.arpa            
+                      ~108.100.in-addr.arpa            
+                      ~109.100.in-addr.arpa            
+                      ~110.100.in-addr.arpa            
+                      ~111.100.in-addr.arpa            
+                      ~112.100.in-addr.arpa            
+                      ~113.100.in-addr.arpa            
+                      ~114.100.in-addr.arpa            
+                      ~115.100.in-addr.arpa            
+                      ~116.100.in-addr.arpa            
+                      ~117.100.in-addr.arpa            
+                      ~118.100.in-addr.arpa            
+                      ~119.100.in-addr.arpa            
+                      ~120.100.in-addr.arpa            
+                      ~121.100.in-addr.arpa            
+                      ~122.100.in-addr.arpa            
+                      ~123.100.in-addr.arpa            
+                      ~124.100.in-addr.arpa            
+                      ~125.100.in-addr.arpa            
+                      ~126.100.in-addr.arpa            
+                      ~127.100.in-addr.arpa            
+                      ~64.100.in-addr.arpa             
+                      ~65.100.in-addr.arpa             
+                      ~66.100.in-addr.arpa             
+                      ~67.100.in-addr.arpa             
+                      ~68.100.in-addr.arpa             
+                      ~69.100.in-addr.arpa             
+                      ~70.100.in-addr.arpa             
+                      ~71.100.in-addr.arpa             
+                      ~72.100.in-addr.arpa             
+                      ~73.100.in-addr.arpa             
+                      ~74.100.in-addr.arpa             
+                      ~75.100.in-addr.arpa             
+                      ~76.100.in-addr.arpa             
+                      ~77.100.in-addr.arpa             
+                      ~78.100.in-addr.arpa             
+                      ~79.100.in-addr.arpa             
+                      ~80.100.in-addr.arpa             
+                      ~81.100.in-addr.arpa             
+                      ~82.100.in-addr.arpa             
+                      ~83.100.in-addr.arpa             
+                      ~84.100.in-addr.arpa             
+                      ~85.100.in-addr.arpa             
+                      ~86.100.in-addr.arpa             
+                      ~87.100.in-addr.arpa             
+                      ~88.100.in-addr.arpa             
+                      ~89.100.in-addr.arpa             
+                      ~90.100.in-addr.arpa             
+                      ~91.100.in-addr.arpa             
+                      ~92.100.in-addr.arpa             
+                      ~93.100.in-addr.arpa             
+                      ~94.100.in-addr.arpa             
+                      ~95.100.in-addr.arpa             
+                      ~96.100.in-addr.arpa             
+                      ~97.100.in-addr.arpa             
+                      ~98.100.in-addr.arpa             
+                      ~99.100.in-addr.arpa             
+                      ~ts.net                          
+
+Link 3 (docker0)
+      Current Scopes: none
+DefaultRoute setting: no  
+       LLMNR setting: yes 
+MulticastDNS setting: no  
+  DNSOverTLS setting: no  
+      DNSSEC setting: no  
+    DNSSEC supported: no  
+
+Link 2 (eth0)
+      Current Scopes: DNS           
+DefaultRoute setting: yes           
+       LLMNR setting: yes           
+MulticastDNS setting: no            
+  DNSOverTLS setting: no            
+      DNSSEC setting: no            
+    DNSSEC supported: no            
+  Current DNS Server: 100.125.1.250 
+         DNS Servers: 100.125.1.250 
+          DNS Domain: ~.            
+                      openstacklocal
+
+$ resolvectl query download.jetbrains.com</code></pre>
+<h2 data-number="8.4" id="huawei-system-snapshot"><span
+class="header-section-number">8.4</span> 8.4 Huawei: system
+snapshot</h2>
+<pre class="text"><code>Server label: Huawei
+Hostname: hcss-ecs-aab9
+Started at: 2026-04-29T23:34:57+08:00
+
+[uname]
+Linux hcss-ecs-aab9 5.4.0-190-generic #210-Ubuntu SMP Fri Jul 5 17:03:38 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux
+
+[curl version]
+curl 7.68.0 (x86_64-pc-linux-gnu) libcurl/7.68.0 OpenSSL/1.1.1f zlib/1.2.11 brotli/1.0.7 libidn2/2.2.0 libpsl/0.21.0 (+libidn2/2.2.0) libssh/0.9.3/openssl/zlib nghttp2/1.40.0 librtmp/2.3
+Release-Date: 2020-01-08
+Protocols: dict file ftp ftps gopher http https imap imaps ldap ldaps pop3 pop3s rtmp rtsp scp sftp smb smbs smtp smtps telnet tftp 
+Features: AsynchDNS brotli GSS-API HTTP2 HTTPS-proxy IDN IPv6 Kerberos Largefile libz NTLM NTLM_WB PSL SPNEGO SSL TLS-SRP UnixSockets
+
+[dig version]
+DiG 9.18.28-0ubuntu0.20.04.1-Ubuntu
+
+[proxy environment]
+No proxy environment variables found.
+
+[ip route IPv4]
+8.8.8.8 via 192.168.0.1 dev eth0 src 192.168.3.137 uid 0 
+    cache 
+
+[ip route IPv6]
+RTNETLINK answers: Network is unreachable
+
+[resolver]
+# Dynamic resolv.conf(5) file for glibc resolver(3) generated by resolvconf(8)
+#     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN
+# 127.0.0.53 is the systemd-resolved stub resolver.
+# run &quot;systemd-resolve --status&quot; to see details about the actual nameservers.
+
+nameserver 127.0.0.53
+search openstacklocal tailcdd329.ts.net
+options timeout:1 single-request-reopen</code></pre>
+<h2 data-number="8.5" id="curl-timing"><span
+class="header-section-number">8.5</span> 8.5 5090: curl timing</h2>
+<pre class="text"><code>curl -vL &quot;https://download.jetbrains.com/idea/code-with-me/JetBrainsClient-253.20558.58.jbr.win.zip&quot; \
+  -o JetBrainsClient-253.20558.58.jbr.win.zip \
+  2&gt; check-speed-idea.log
+
+exit_code=0
+started_epoch=1777476903
+ended_epoch=1777477243
+elapsed_seconds=340
+
+[file]
+-rw-rw-r-- 1 ubuntu ubuntu 715M Apr 29 23:40 JetBrainsClient-253.20558.58.jbr.win.zip
+
+
+DNS Lookup:    0.258650s
+TCP Connect:   0.498220s
+TLS Handshake: 0.748999s
+Pre-Transfer:  0.749251s
+TTFB:          1.213278s
+Total Time:    334.902149s
+Download Size: 749537454 bytes
+HTTP Code:     200</code></pre>
+<h2 data-number="8.6" id="cloudfront-headers-from-curl.log"><span
+class="header-section-number">8.6</span> 8.6 5090: CloudFront headers
+from <code>curl.log</code></h2>
+<pre class="text"><code>&lt; HTTP/2 302 
+&lt; content-type: text/html
+&lt; content-length: 138
+&lt; location: https://download-cdn.jetbrains.com/idea/code-with-me/JetBrainsClient-253.20558.58.jbr.win.zip
+&lt; date: Wed, 29 Apr 2026 15:40:43 GMT
+&lt; x-geocode: HK
+&lt; x-cache: Miss from cloudfront
+&lt; via: 1.1 63947a1a73ede74a39fa169dcf13227a.cloudfront.net (CloudFront)
+&lt; x-amz-cf-pop: HKG1-P1
+&lt; content-type: binary/octet-stream
+&lt; content-length: 749537454
+&lt; date: Wed, 29 Apr 2026 15:35:06 GMT
+&lt; x-cache: Hit from cloudfront
+&lt; via: 1.1 3c65c8de2d2443b1201cd33d859d8db0.cloudfront.net (CloudFront)
+&lt; x-amz-cf-pop: SFO53-P5</code></pre>
+<h2 data-number="8.7" id="connection-target-from-curl.log"><span
+class="header-section-number">8.7</span> 8.7 5090: connection target
+from <code>curl.log</code></h2>
+<pre class="text"><code>* IPv6: 2600:9000:2014:da00:12:7c44:15c0:93a1, 2600:9000:2014:c400:12:7c44:15c0:93a1, 2600:9000:2014:fa00:12:7c44:15c0:93a1, 2600:9000:2014:3400:12:7c44:15c0:93a1, 2600:9000:2014:2e00:12:7c44:15c0:93a1, 2600:9000:2014:2000:12:7c44:15c0:93a1, 2600:9000:2014:ca00:12:7c44:15c0:93a1, 2600:9000:2014:0:12:7c44:15c0:93a1
+* IPv4: 54.230.70.78, 54.230.70.88, 54.230.70.27, 54.230.70.109
+* Connected to download.jetbrains.com (54.230.70.78) port 443
+* Host download-cdn.jetbrains.com:443 was resolved.
+* IPv6: 2600:9000:25f2:b800:6:6899:5680:93a1, 2600:9000:25f2:f000:6:6899:5680:93a1, 2600:9000:25f2:e800:6:6899:5680:93a1, 2600:9000:25f2:4a00:6:6899:5680:93a1, 2600:9000:25f2:4c00:6:6899:5680:93a1, 2600:9000:25f2:2600:6:6899:5680:93a1, 2600:9000:25f2:1e00:6:6899:5680:93a1, 2600:9000:25f2:1c00:6:6899:5680:93a1
+* IPv4: 18.238.192.80, 18.238.192.105, 18.238.192.40, 18.238.192.117
+* Connected to download-cdn.jetbrains.com (18.238.192.80) port 443</code></pre>
+<h2 data-number="8.8" id="external-ip-and-resolver"><span
+class="header-section-number">8.8</span> 8.8 5090: external IP and
+resolver</h2>
+<pre class="text"><code>$ printf &#39;[IPv4]\n&#39;; curl -4 -sS --max-time 30 https://api.ipify.org; printf &#39;\n\n[IPv6]\n&#39;; curl -6 -sS --max-time 30 https://api64.ipify.org; printf &#39;\n&#39;
+
+[IPv4]
+160.20.53.106
+
+[IPv6]
+curl: (7) Failed to connect to api64.ipify.org port 443 after 11 ms: Couldn&#39;t connect to server
+
+
+[exit_code]=0
+
+$ resolvectl status
+Global
+         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+  resolv.conf mode: stub
+
+Link 2 (enp130s0)
+    Current Scopes: DNS
+         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+Current DNS Server: 10.6.0.2
+       DNS Servers: 10.6.0.2 10.6.0.3
+        DNS Domain: xjtlu.edu.cn
+
+Link 3 (wlp129s0)
+    Current Scopes: none
+         Protocols: -DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 4 (tailscale0)
+    Current Scopes: DNS
+         Protocols: -DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+Current DNS Server: 100.100.100.100
+       DNS Servers: 100.100.100.100 fd7a:115c:a1e0::53
+        DNS Domain: tailcdd329.ts.net ~0.e.1.a.c.5.1.1.a.7.d.f.ip6.arpa
+                    ~100.100.in-addr.arpa ~101.100.in-addr.arpa
+                    ~102.100.in-addr.arpa ~103.100.in-addr.arpa
+                    ~104.100.in-addr.arpa ~105.100.in-addr.arpa
+                    ~106.100.in-addr.arpa ~107.100.in-addr.arpa
+                    ~108.100.in-addr.arpa ~109.100.in-addr.arpa
+                    ~110.100.in-addr.arpa ~111.100.in-addr.arpa
+                    ~112.100.in-addr.arpa ~113.100.in-addr.arpa
+                    ~114.100.in-addr.arpa ~115.100.in-addr.arpa
+                    ~116.100.in-addr.arpa ~117.100.in-addr.arpa
+                    ~118.100.in-addr.arpa ~119.100.in-addr.arpa
+                    ~120.100.in-addr.arpa ~121.100.in-addr.arpa
+                    ~122.100.in-addr.arpa ~123.100.in-addr.arpa
+                    ~124.100.in-addr.arpa ~125.100.in-addr.arpa
+                    ~126.100.in-addr.arpa ~127.100.in-addr.arpa
+                    ~64.100.in-addr.arpa ~65.100.in-addr.arpa
+                    ~66.100.in-addr.arpa ~67.100.in-addr.arpa
+                    ~68.100.in-addr.arpa ~69.100.in-addr.arpa
+                    ~70.100.in-addr.arpa ~71.100.in-addr.arpa
+                    ~72.100.in-addr.arpa ~73.100.in-addr.arpa
+                    ~74.100.in-addr.arpa ~75.100.in-addr.arpa
+                    ~76.100.in-addr.arpa ~77.100.in-addr.arpa
+                    ~78.100.in-addr.arpa ~79.100.in-addr.arpa
+                    ~80.100.in-addr.arpa ~81.100.in-addr.arpa
+                    ~82.100.in-addr.arpa ~83.100.in-addr.arpa
+                    ~84.100.in-addr.arpa ~85.100.in-addr.arpa
+                    ~86.100.in-addr.arpa ~87.100.in-addr.arpa
+                    ~88.100.in-addr.arpa ~89.100.in-addr.arpa
+                    ~90.100.in-addr.arpa ~91.100.in-addr.arpa
+                    ~92.100.in-addr.arpa ~93.100.in-addr.arpa
+                    ~94.100.in-addr.arpa ~95.100.in-addr.arpa
+                    ~96.100.in-addr.arpa ~97.100.in-addr.arpa
+                    ~98.100.in-addr.arpa ~99.100.in-addr.arpa ~ts.net
+
+$ resolvectl query download.jetbrains.com
+download.jetbrains.com: 2600:9000:2014:4000:12:7c44:15c0:93a1 -- link: enp130s0
+                        2600:9000:2014:5000:12:7c44:15c0:93a1 -- link: enp130s0
+                        2600:9000:2014:9000:12:7c44:15c0:93a1 -- link: enp130s0
+                        2600:9000:2014:3800:12:7c44:15c0:93a1 -- link: enp130s0
+                        2600:9000:2014:ec00:12:7c44:15c0:93a1 -- link: enp130s0
+                        2600:9000:2014:2c00:12:7c44:15c0:93a1 -- link: enp130s0
+                        2600:9000:2014:5200:12:7c44:15c0:93a1 -- link: enp130s0
+                        2600:9000:2014:3000:12:7c44:15c0:93a1 -- link: enp130s0
+                        54.230.70.88                        -- link: enp130s0
+                        54.230.70.27                        -- link: enp130s0
+                        54.230.70.109                       -- link: enp130s0
+                        54.230.70.78                        -- link: enp130s0
+                        (d1do0znm134sif.cloudfront.net)
+
+-- Information acquired via protocol DNS in 309.8ms.
+-- Data is authenticated: no; Data was acquired via local or encrypted transport: no
+-- Data from: network</code></pre>
+<h2 data-number="8.9" id="system-snapshot"><span
+class="header-section-number">8.9</span> 8.9 5090: system snapshot</h2>
+<pre class="text"><code>Server label: 5090
+Hostname: ubuntu-Z890-EAGLE-WIFI7
+Started at: 2026-04-29T23:35:02+08:00
+
+[uname]
+Linux ubuntu-Z890-EAGLE-WIFI7 6.17.0-22-generic #22~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Mar 26 15:25:54 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+
+[curl version]
+curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10
+Release-Date: 2023-12-06, security patched: 8.5.0-2ubuntu10.8
+Protocols: dict file ftp ftps gopher gophers http https imap imaps ldap ldaps mqtt pop3 pop3s rtmp rtsp scp sftp smb smbs smtp smtps telnet tftp
+Features: alt-svc AsynchDNS brotli GSS-API HSTS HTTP2 HTTPS-proxy IDN IPv6 Kerberos Largefile libz NTLM PSL SPNEGO SSL threadsafe TLS-SRP UnixSockets zstd
+
+[dig version]
+DiG 9.18.39-0ubuntu0.24.04.3-Ubuntu
+
+[proxy environment]
+No proxy environment variables found.
+
+[ip route IPv4]
+8.8.8.8 via 10.12.48.1 dev enp130s0 src 10.12.48.170 uid 1000 
+    cache 
+
+[ip route IPv6]
+RTNETLINK answers: Network is unreachable
+
+[resolver]
+# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).
+# Do not edit.
+#
+# This file might be symlinked as /etc/resolv.conf. If you&#39;re looking at
+# /etc/resolv.conf and seeing this text, you have followed the symlink.
+#
+# This is a dynamic resolv.conf file for connecting local clients to the
+# internal DNS stub resolver of systemd-resolved. This file lists all
+# configured search domains.
+#
+# Run &quot;resolvectl status&quot; to see details about the uplink DNS servers
+# currently in use.
+#
+# Third party programs should typically not access this file directly, but only
+# through the symlink at /etc/resolv.conf. To manage man:resolv.conf(5) in a
+# different way, replace this symlink by a static file or a different symlink.
+#
+# See man:systemd-resolved.service(8) for details about the supported modes of
+# operation for /etc/resolv.conf.
+
+nameserver 127.0.0.53
+options edns0 trust-ad
+search tailcdd329.ts.net xjtlu.edu.cn</code></pre>
+<h2 data-number="8.10" id="full-dns-command-output"><span
+class="header-section-number">8.10</span> 8.10 Full DNS command
+output</h2>
+<h3 data-number="8.10.1" id="huawei-1"><span
+class="header-section-number">8.10.1</span> Huawei</h3>
+<pre class="text"><code>$ dig A @8.8.8.8 download.jetbrains.com; dig A @1.1.1.1 download.jetbrains.com; dig A @8.8.8.8 download-cdn.jetbrains.com; dig A @1.1.1.1 download-cdn.jetbrains.com; dig AAAA @8.8.8.8 download.jetbrains.com; dig AAAA @1.1.1.1 download.jetbrains.com; dig AAAA @8.8.8.8 download-cdn.jetbrains.com; dig AAAA @1.1.1.1 download-cdn.jetbrains.com
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.20.04.1-Ubuntu &lt;&lt;&gt;&gt; A @8.8.8.8 download.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 26674
+;; flags: qr rd ra; QUERY: 1, ANSWER: 5, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;download.jetbrains.com.        IN  A
+
+;; ANSWER SECTION:
+download.jetbrains.com. 120 IN  CNAME   d1do0znm134sif.cloudfront.net.
+d1do0znm134sif.cloudfront.net. 60 IN    A   3.165.11.66
+d1do0znm134sif.cloudfront.net. 60 IN    A   3.165.11.38
+d1do0znm134sif.cloudfront.net. 60 IN    A   3.165.11.5
+d1do0znm134sif.cloudfront.net. 60 IN    A   3.165.11.103
+
+;; Query time: 227 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)
+;; WHEN: Wed Apr 29 23:35:06 CST 2026
+;; MSG SIZE  rcvd: 158
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.20.04.1-Ubuntu &lt;&lt;&gt;&gt; A @1.1.1.1 download.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 52553
+;; flags: qr rd ra; QUERY: 1, ANSWER: 5, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;download.jetbrains.com.        IN  A
+
+;; ANSWER SECTION:
+download.jetbrains.com. 92  IN  CNAME   d1do0znm134sif.cloudfront.net.
+d1do0znm134sif.cloudfront.net. 32 IN    A   216.137.39.31
+d1do0znm134sif.cloudfront.net. 32 IN    A   216.137.39.32
+d1do0znm134sif.cloudfront.net. 32 IN    A   216.137.39.116
+d1do0znm134sif.cloudfront.net. 32 IN    A   216.137.39.26
+
+;; Query time: 179 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Wed Apr 29 23:35:06 CST 2026
+;; MSG SIZE  rcvd: 158
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.20.04.1-Ubuntu &lt;&lt;&gt;&gt; A @8.8.8.8 download-cdn.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 59218
+;; flags: qr rd ra; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;download-cdn.jetbrains.com.    IN  A
+
+;; ANSWER SECTION:
+download-cdn.jetbrains.com. 60  IN  A   3.173.254.86
+download-cdn.jetbrains.com. 60  IN  A   3.173.254.99
+download-cdn.jetbrains.com. 60  IN  A   3.173.254.26
+download-cdn.jetbrains.com. 60  IN  A   3.173.254.118
+
+;; Query time: 271 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)
+;; WHEN: Wed Apr 29 23:35:06 CST 2026
+;; MSG SIZE  rcvd: 119
+
+;; communications error to 1.1.1.1#53: timed out
+
+; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.20.04.1-Ubuntu &lt;&lt;&gt;&gt; A @1.1.1.1 download-cdn.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 20669
+;; flags: qr rd ra; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;download-cdn.jetbrains.com.    IN  A
+
+;; ANSWER SECTION:
+download-cdn.jetbrains.com. 47  IN  A   18.154.206.79
+download-cdn.jetbrains.com. 47  IN  A   18.154.206.91
+download-cdn.jetbrains.com. 47  IN  A   18.154.206.111
+download-cdn.jetbrains.com. 47  IN  A   18.154.206.30
+
+;; Query time: 183 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Wed Apr 29 23:35:08 CST 2026
+;; MSG SIZE  rcvd: 119
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.20.04.1-Ubuntu &lt;&lt;&gt;&gt; AAAA @8.8.8.8 download.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 9151
+;; flags: qr rd ra; QUERY: 1, ANSWER: 9, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;download.jetbrains.com.        IN  AAAA
+
+;; ANSWER SECTION:
+download.jetbrains.com. 120 IN  CNAME   d1do0znm134sif.cloudfront.net.
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:26ef:6200:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:26ef:6800:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:26ef:9e00:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:26ef:b000:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:26ef:a400:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:26ef:7200:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:26ef:6e00:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:26ef:1e00:12:7c44:15c0:93a1
+
+;; Query time: 255 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)
+;; WHEN: Wed Apr 29 23:35:08 CST 2026
+;; MSG SIZE  rcvd: 318
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.20.04.1-Ubuntu &lt;&lt;&gt;&gt; AAAA @1.1.1.1 download.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 203
+;; flags: qr rd ra; QUERY: 1, ANSWER: 9, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;download.jetbrains.com.        IN  AAAA
+
+;; ANSWER SECTION:
+download.jetbrains.com. 51  IN  CNAME   d1do0znm134sif.cloudfront.net.
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2365:6e00:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2365:e00:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2365:1400:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2365:8800:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2365:800:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2365:2000:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2365:4200:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2365:8000:12:7c44:15c0:93a1
+
+;; Query time: 183 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Wed Apr 29 23:35:08 CST 2026
+;; MSG SIZE  rcvd: 318
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.20.04.1-Ubuntu &lt;&lt;&gt;&gt; AAAA @8.8.8.8 download-cdn.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 33269
+;; flags: qr rd ra; QUERY: 1, ANSWER: 8, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;download-cdn.jetbrains.com.    IN  AAAA
+
+;; ANSWER SECTION:
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2957:fe00:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2957:aa00:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2957:b400:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2957:b200:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2957:400:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2957:3600:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2957:1a00:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2957:5a00:6:6899:5680:93a1
+
+;; Query time: 327 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)
+;; WHEN: Wed Apr 29 23:35:08 CST 2026
+;; MSG SIZE  rcvd: 279
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.28-0ubuntu0.20.04.1-Ubuntu &lt;&lt;&gt;&gt; AAAA @1.1.1.1 download-cdn.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 30460
+;; flags: qr rd ra; QUERY: 1, ANSWER: 8, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;download-cdn.jetbrains.com.    IN  AAAA
+
+;; ANSWER SECTION:
+download-cdn.jetbrains.com. 12  IN  AAAA    2600:9000:265c:7600:6:6899:5680:93a1
+download-cdn.jetbrains.com. 12  IN  AAAA    2600:9000:265c:e400:6:6899:5680:93a1
+download-cdn.jetbrains.com. 12  IN  AAAA    2600:9000:265c:0:6:6899:5680:93a1
+download-cdn.jetbrains.com. 12  IN  AAAA    2600:9000:265c:9600:6:6899:5680:93a1
+download-cdn.jetbrains.com. 12  IN  AAAA    2600:9000:265c:a400:6:6899:5680:93a1
+download-cdn.jetbrains.com. 12  IN  AAAA    2600:9000:265c:f200:6:6899:5680:93a1
+download-cdn.jetbrains.com. 12  IN  AAAA    2600:9000:265c:da00:6:6899:5680:93a1
+download-cdn.jetbrains.com. 12  IN  AAAA    2600:9000:265c:4a00:6:6899:5680:93a1
+
+;; Query time: 179 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Wed Apr 29 23:35:09 CST 2026
+;; MSG SIZE  rcvd: 279
+
+
+[exit_code]=0</code></pre>
+<h3 data-number="8.10.2" id="section-1"><span
+class="header-section-number">8.10.2</span> 5090</h3>
+<pre class="text"><code>$ dig A @8.8.8.8 download.jetbrains.com; dig A @1.1.1.1 download.jetbrains.com; dig A @8.8.8.8 download-cdn.jetbrains.com; dig A @1.1.1.1 download-cdn.jetbrains.com; dig AAAA @8.8.8.8 download.jetbrains.com; dig AAAA @1.1.1.1 download.jetbrains.com; dig AAAA @8.8.8.8 download-cdn.jetbrains.com; dig AAAA @1.1.1.1 download-cdn.jetbrains.com
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.39-0ubuntu0.24.04.3-Ubuntu &lt;&lt;&gt;&gt; A @8.8.8.8 download.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 8618
+;; flags: qr rd ra; QUERY: 1, ANSWER: 5, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;download.jetbrains.com.        IN  A
+
+;; ANSWER SECTION:
+download.jetbrains.com. 120 IN  CNAME   d1do0znm134sif.cloudfront.net.
+d1do0znm134sif.cloudfront.net. 60 IN    A   54.230.70.109
+d1do0znm134sif.cloudfront.net. 60 IN    A   54.230.70.88
+d1do0znm134sif.cloudfront.net. 60 IN    A   54.230.70.27
+d1do0znm134sif.cloudfront.net. 60 IN    A   54.230.70.78
+
+;; Query time: 52 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)
+;; WHEN: Wed Apr 29 23:35:02 CST 2026
+;; MSG SIZE  rcvd: 158
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.39-0ubuntu0.24.04.3-Ubuntu &lt;&lt;&gt;&gt; A @1.1.1.1 download.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 11277
+;; flags: qr rd ra; QUERY: 1, ANSWER: 5, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;download.jetbrains.com.        IN  A
+
+;; ANSWER SECTION:
+download.jetbrains.com. 114 IN  CNAME   d1do0znm134sif.cloudfront.net.
+d1do0znm134sif.cloudfront.net. 54 IN    A   54.230.70.109
+d1do0znm134sif.cloudfront.net. 54 IN    A   54.230.70.27
+d1do0znm134sif.cloudfront.net. 54 IN    A   54.230.70.78
+d1do0znm134sif.cloudfront.net. 54 IN    A   54.230.70.88
+
+;; Query time: 46 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Wed Apr 29 23:35:02 CST 2026
+;; MSG SIZE  rcvd: 158
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.39-0ubuntu0.24.04.3-Ubuntu &lt;&lt;&gt;&gt; A @8.8.8.8 download-cdn.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 12143
+;; flags: qr rd ra; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;download-cdn.jetbrains.com.    IN  A
+
+;; ANSWER SECTION:
+download-cdn.jetbrains.com. 60  IN  A   13.35.190.61
+download-cdn.jetbrains.com. 60  IN  A   13.35.190.21
+download-cdn.jetbrains.com. 60  IN  A   13.35.190.64
+download-cdn.jetbrains.com. 60  IN  A   13.35.190.99
+
+;; Query time: 48 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)
+;; WHEN: Wed Apr 29 23:35:02 CST 2026
+;; MSG SIZE  rcvd: 119
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.39-0ubuntu0.24.04.3-Ubuntu &lt;&lt;&gt;&gt; A @1.1.1.1 download-cdn.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 65065
+;; flags: qr rd ra; QUERY: 1, ANSWER: 4, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;download-cdn.jetbrains.com.    IN  A
+
+;; ANSWER SECTION:
+download-cdn.jetbrains.com. 26  IN  A   13.35.190.99
+download-cdn.jetbrains.com. 26  IN  A   13.35.190.61
+download-cdn.jetbrains.com. 26  IN  A   13.35.190.64
+download-cdn.jetbrains.com. 26  IN  A   13.35.190.21
+
+;; Query time: 63 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Wed Apr 29 23:35:02 CST 2026
+;; MSG SIZE  rcvd: 119
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.39-0ubuntu0.24.04.3-Ubuntu &lt;&lt;&gt;&gt; AAAA @8.8.8.8 download.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 61344
+;; flags: qr rd ra; QUERY: 1, ANSWER: 9, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;download.jetbrains.com.        IN  AAAA
+
+;; ANSWER SECTION:
+download.jetbrains.com. 120 IN  CNAME   d1do0znm134sif.cloudfront.net.
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2014:2600:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2014:4600:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2014:7800:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2014:2200:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2014:5400:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2014:f400:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2014:c00:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 60 IN    AAAA    2600:9000:2014:b000:12:7c44:15c0:93a1
+
+;; Query time: 82 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)
+;; WHEN: Wed Apr 29 23:35:02 CST 2026
+;; MSG SIZE  rcvd: 318
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.39-0ubuntu0.24.04.3-Ubuntu &lt;&lt;&gt;&gt; AAAA @1.1.1.1 download.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 25289
+;; flags: qr rd ra; QUERY: 1, ANSWER: 9, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;download.jetbrains.com.        IN  AAAA
+
+;; ANSWER SECTION:
+download.jetbrains.com. 114 IN  CNAME   d1do0znm134sif.cloudfront.net.
+d1do0znm134sif.cloudfront.net. 54 IN    AAAA    2600:9000:2014:8e00:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 54 IN    AAAA    2600:9000:2014:9c00:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 54 IN    AAAA    2600:9000:2014:9400:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 54 IN    AAAA    2600:9000:2014:4200:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 54 IN    AAAA    2600:9000:2014:1600:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 54 IN    AAAA    2600:9000:2014:7200:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 54 IN    AAAA    2600:9000:2014:4a00:12:7c44:15c0:93a1
+d1do0znm134sif.cloudfront.net. 54 IN    AAAA    2600:9000:2014:2200:12:7c44:15c0:93a1
+
+;; Query time: 43 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Wed Apr 29 23:35:02 CST 2026
+;; MSG SIZE  rcvd: 318
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.39-0ubuntu0.24.04.3-Ubuntu &lt;&lt;&gt;&gt; AAAA @8.8.8.8 download-cdn.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 19414
+;; flags: qr rd ra; QUERY: 1, ANSWER: 8, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;download-cdn.jetbrains.com.    IN  AAAA
+
+;; ANSWER SECTION:
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2079:3800:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2079:3e00:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2079:8600:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2079:c00:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2079:d600:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2079:7400:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2079:4400:6:6899:5680:93a1
+download-cdn.jetbrains.com. 60  IN  AAAA    2600:9000:2079:1600:6:6899:5680:93a1
+
+;; Query time: 60 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8) (UDP)
+;; WHEN: Wed Apr 29 23:35:03 CST 2026
+;; MSG SIZE  rcvd: 279
+
+
+; &lt;&lt;&gt;&gt; DiG 9.18.39-0ubuntu0.24.04.3-Ubuntu &lt;&lt;&gt;&gt; AAAA @1.1.1.1 download-cdn.jetbrains.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 24179
+;; flags: qr rd ra; QUERY: 1, ANSWER: 8, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;download-cdn.jetbrains.com.    IN  AAAA
+
+;; ANSWER SECTION:
+download-cdn.jetbrains.com. 56  IN  AAAA    2600:9000:2079:5c00:6:6899:5680:93a1
+download-cdn.jetbrains.com. 56  IN  AAAA    2600:9000:2079:4000:6:6899:5680:93a1
+download-cdn.jetbrains.com. 56  IN  AAAA    2600:9000:2079:5400:6:6899:5680:93a1
+download-cdn.jetbrains.com. 56  IN  AAAA    2600:9000:2079:400:6:6899:5680:93a1
+download-cdn.jetbrains.com. 56  IN  AAAA    2600:9000:2079:4400:6:6899:5680:93a1
+download-cdn.jetbrains.com. 56  IN  AAAA    2600:9000:2079:ec00:6:6899:5680:93a1
+download-cdn.jetbrains.com. 56  IN  AAAA    2600:9000:2079:da00:6:6899:5680:93a1
+download-cdn.jetbrains.com. 56  IN  AAAA    2600:9000:2079:c00:6:6899:5680:93a1
+
+;; Query time: 43 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+;; WHEN: Wed Apr 29 23:35:03 CST 2026
+;; MSG SIZE  rcvd: 279
+
+
+[exit_code]=0</code></pre>
+</body>
+</html>

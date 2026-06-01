@@ -851,6 +851,16 @@
       font-family: "JetBrains Mono", monospace;
     }
 
+    .doc-frame {
+      width: 100%;
+      height: min(68vh, 760px);
+      margin-top: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--crust);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
     .config-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1055,7 +1065,7 @@
           <p class="plain">Resume and source files are kept here for direct reading or download.</p>
           <button class="blog-jump" onclick="showView('blog')">
             <strong><i class="ph-fill ph-notebook"></i> open docs blog</strong>
-            <span>Read full local Markdown docs: embedded, CAE, cough audio, CAD automation, learning plan, and simulation records.</span>
+            <span>Read full local Markdown and HTML docs: embedded, CAE, CAD UI, signal visualization, firmware reports, and simulation records.</span>
           </button>
           <div class="doc-list">
             <a class="doc-link" href="CV_Ziyu_Zhao_final.pdf" target="_blank"><span>CV_Ziyu_Zhao_final.pdf</span><i class="ph-fill ph-arrow-square-out"></i></a>
@@ -1416,6 +1426,7 @@ Source files in this folder:
       { cmd: "read mes204-lcd", desc: "open full embedded README" },
       { cmd: "read cough-project", desc: "open cough audio research doc" },
       { cmd: "read 270-day-learning-plan", desc: "open self-learning roadmap" },
+      { cmd: "read mes201-signal-visualization", desc: "open interactive HTML note" },
       { cmd: "repo MES204_lcd", desc: "open GitHub repository" },
       { cmd: "contact", desc: "email and GitHub" },
       { cmd: "clear", desc: "clear the assistant panel" }
@@ -1427,8 +1438,8 @@ Source files in this folder:
       "embedded",
       "publication",
       "read mes204-lcd",
-      "read cough-project",
-      "read 270-day-learning-plan",
+      "read mes201-signal-visualization",
+      "read forgespec-studio-app",
       "docs"
     ];
 

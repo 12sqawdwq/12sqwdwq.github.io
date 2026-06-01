@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Lorenz p5 sketch</title>
+  <style>
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #090909;
+      display: grid;
+      place-items: center;
+    }
+    canvas {
+      border: 1px solid #333;
+    }
+  </style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<script>
+let t = 0, d = 5e-4;
+
+function setup() {
+  createCanvas(400, 400);
+}
+
+function draw() {
+  t++;
+  background(9);
+  stroke(400, 96);
+  for (let x = 9, y = 9, z = 9, i = 3e4; i--; ) {
+    const e = sin(t * PI / 20 - x * x / 99 + i % 9) + 1;
+    const q = x * e + 89;
+    const k = z / 59 - e / 29 + t * PI / 480 + (i % 9) * 8;
+    point(
+      q * cos(k) + 200,
+      200 - (q + 60 * cos(k / 2)) * sin(k)
+    );
+    [x, y, z] = [
+      x + 9 * (y - x) * d,
+      y + (x * (28 - z) - y) * d,
+      z + (x * y - z - z) * d
+    ];
+  }
+}
+</script>
+</body>
+</html>

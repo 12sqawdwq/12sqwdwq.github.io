@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>信号全景可视化：欧拉相量、时域与频域的终极联动</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #11141a;
+            color: #e0e6ed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 { margin-bottom: 5px; color: #3498db; font-size: 24px; }
+        .subtitle { color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
+        .main-container {
+            display: flex;
+            background: #1a1f29;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            gap: 20px;
+            max-width: 1100px;
+        }
+        .canvas-container {
+            display: grid;
+            grid-template-columns: 450px 550px;
+            grid-template-rows: 250px 250px;
+            gap: 15px;
+        }
+        canvas {
+            background: #12161f;
+            border-radius: 8px;
+            border: 1px solid #2c3e50;
+        }
+        #eulerCanvas { grid-row: 1 / span 2; } /* 左侧复平面跨两行 */
+        .control-panel {
+            width: 280px;
+            background: #1e2530;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label { font-size: 13px; color: #95a5a6; font-weight: 500; }
+        .val-txt { float: right; color: #3498db; font-weight: bold; }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: #2c3e50;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+        .formula-box {
+            background: #12161f;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: "Consolas", monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            border-left: 4px solid #2ecc71;
+        }
+        .color-tag { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>信号全景联动：欧拉复相量 ⇄ 时域 ⇄ 频域</h1>
+    <div class="subtitle">通过系统传递函数 H(jω) 彻底解构系统内部的物理图像</div>
+
+    <div class="main-container">
+        <div class="canvas-container">
+            <canvas id="eulerCanvas" width="450" height="515"></canvas>
+            <canvas id="timeCanvas" width="550" height="250"></canvas>
+            <canvas id="freqCanvas" width="550" height="250"></canvas>
+        </div>
+
+        <div class="control-panel">
+            <div style="font-size: 16px; font-weight: bold; border-bottom: 1px solid #2c3e50; padding-bottom: 8px; color:#fff;">系统参数配置</div>
+            
+            <div class="slider-group">
+                <label>系统幅值增益 (模长 |H|)<span id="magTxt" class="val-txt">0.70</span></label>
+                <input type="range" id="magSlider" min="0.1" max="1.5" step="0.05" value="0.7">
+            </div>
+
+            <div class="slider-group">
+                <label>系统相位延迟 (∠H)<span id="phaseTxt" class="val-txt">-45°</span></label>
+                <input type="range" id="phaseSlider" min="-180" max="180" step="5" value="-45">
+            </div>
+
+            <div class="slider-group">
+                <label>信号角频率 (ω)<span id="omegaTxt" class="val-txt">1.0 rad/s</span></label>
+                <input type="range" id="omegaSlider" min="0.2" max="3.0" step="0.1" value="1.0">
+            </div>
+
+            <div class="formula-box">
+                <span style="color:#7f8c8d">【欧拉表示法体系】</span><br>
+                输入: <span style="color:#00d2d3">v_in = 1.0 · e^{jωt}</span><br>
+                系统: <span style="color:#ff6b6b">H(jω) = <span id="f_mag">0.7</span>e^{j(<span id="f_phase">-45°</span>)}</span><br>
+                输出: <span style="color:#10ac84">v_out = H(jω) · v_in</span>
+            </div>
+
+            <div style="font-size: 11px; color: #7f8c8d; line-height: 1.4;">
+                <span class="color-tag" style="background:#00d2d3"></span>输入信号 (Input)<br>
+                <span class="color-tag" style="background:#10ac84"></span>输出信号 (Output)<br>
+                <span class="color-tag" style="background:#ff6b6b"></span>系统传递函数 (Transfer H)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取所有 Canvas 上下文
+        const cEuler = document.getElementById('eulerCanvas');
+        const cTime = document.getElementById('timeCanvas');
+        const cFreq = document.getElementById('freqCanvas');
+        
+        const ctxE = cEuler.getContext('2d');
+        const ctxT = cTime.getContext('2d');
+        const ctxF = cFreq.getContext('2d');
+
+        // 获取控制器
+        const sMag = document.getElementById('magSlider');
+        const sPhase = document.getElementById('phaseSlider');
+        const sOmega = document.getElementById('omegaSlider');
+
+        // 全局动态时间变量
+        let time = 0;
+        let historyIn = [];
+        let historyOut = [];
+        const maxHistory = 300; // 时域波形存储点数
+
+        // 核心运行循环 (Animation Loop)
+        function animate() {
+            // 1. 获取当前交互参数
+            const H_mag = parseFloat(sMag.value);
+            const H_phase_deg = parseInt(sPhase.value);
+            const H_phase_rad = (H_phase_deg * Math.PI) / 180;
+            const omega = parseFloat(sOmega.value);
+
+            // 更新文本显示
+            document.getElementById('magTxt').innerText = H_mag.toFixed(2);
+            document.getElementById('phaseTxt').innerText = H_phase_deg + '°';
+            document.getElementById('omegaTxt').innerText = omega.toFixed(1) + ' rad/s';
+            document.getElementById('f_mag').innerText = H_mag.toFixed(2);
+            document.getElementById('f_phase').innerText = H_phase_deg + '°';
+
+            // 2. 物理核心：计算当前时间点的复指数状态
+            // 输入相量：幅值始终固定为 1.0 (基准)
+            const thetaIn = time * omega; 
+            const inX = Math.cos(thetaIn);
+            const inY = Math.sin(thetaIn);
+
+            // 输出相量：幅值乘 H_mag，角度叠加上 H_phase_rad
+            const thetaOut = time * omega + H_phase_rad;
+            const outX = H_mag * Math.cos(thetaOut);
+            const outY = H_mag * Math.sin(thetaOut);
+
+            // 存入历史记录队列（用于渲染时域波形）
+            historyIn.unshift(inY); // 记录投影到虚轴的余弦/正弦分量
+            historyOut.unshift(outY);
+            if (historyIn.length > maxHistory) { historyIn.pop(); historyOut.pop(); }
+
+            // 3. 执行三大画布的重绘
+            renderEuler(H_mag, H_phase_rad, inX, inY, outX, outY);
+            renderTime();
+            renderFreq(H_mag, H_phase_deg);
+
+            // 4. 时间步进
+            time += 0.03;
+            requestAnimationFrame(animate);
+        }
+
+        // ==================== 画布 1：复平面欧拉旋转 ====================
+        function renderEuler(H_mag, H_phase, inX, inY, outX, outY) {
+            ctxE.clearRect(0, 0, cEuler.width, cEuler.height);
+            const cx = cEuler.width / 2;
+            const cy = cEuler.height / 2;
+            const scale = 120; // 1.0 对应的像素长度
+
+            // 绘制坐标系
+            ctxE.strokeStyle = '#2c3e50';
+            ctxE.lineWidth = 1;
+            ctxE.beginPath(); ctxE.moveTo(20, cy); ctxE.lineTo(cEuler.width-20, cy); ctxE.stroke();
+            ctxE.beginPath(); ctxE.moveTo(cx, 20); ctxE.lineTo(cx, cEuler.height-20); ctxE.stroke();
+            
+            ctxE.fillStyle = '#57606f';
+            ctxE.font = '11px Consolas';
+            ctxE.fillText('实轴 Re', cEuler.width - 60, cy - 8);
+            ctxE.fillText('虚轴 Im (j)', cx + 8, 30);
+            ctxE.fillText('复平面 (Complex Plane)', 15, 30);
+
+            // 绘制输入信号的基准单位圆
+            ctxE.strokeStyle = '#232c3d';
+            ctxE.beginPath(); ctxE.arc(cx, cy, scale, 0, 2*Math.PI); ctxE.stroke();
+
+            // 绘制输入向量 (蓝色)
+            drawVector(ctxE, cx, cy, cx + inX*scale, cy - inY*scale, '#00d2d3', 2);
+            // 绘制输出向量 (绿色)
+            drawVector(ctxE, cx, cy, cx + outX*scale, cy - outY*scale, '#10ac84', 3);
+
+            // 绘制系统传递函数 H 的静态几何框架（黄色或红虚线指示相位差）
+            ctxE.strokeStyle = 'rgba(255, 107, 107, 0.3)';
+            ctxE.setLineDash([3, 3]);
+            ctxE.beginPath();
+            ctxE.arc(cx, cy, H_mag * scale, 0, 2*Math.PI);
+            ctxE.stroke();
+            ctxE.setLineDash([]);
+        }
+
+        // ==================== 画布 2：时域波形（投影展开） ====================
+        function renderTime() {
+            ctxT.clearRect(0, 0, cTime.width, cTime.height);
+            const startX = 40;
+            const centerY = cTime.height / 2;
+            const ampScale = 80;
+
+            // 绘制时域网格线
+            ctxT.strokeStyle = '#1c2331';
+            ctxT.beginPath(); ctxT.moveTo(startX, centerY); ctxT.lineTo(cTime.width - 20, centerY); ctxT.stroke();
+            
+            ctxT.fillStyle = '#57606f';
+            ctxT.font = '11px Consolas';
+            ctxT.fillText('时域波形 (Time Domain)', 15, 25);
+            ctxT.fillText('时间 t ➔', cTime.width - 70, centerY + 15);
+
+            // 绘制输入时域正弦波 (蓝色)
+            ctxT.strokeStyle = '#00d2d3';
+            ctxT.lineWidth = 1.5;
+            ctxT.beginPath();
+            for(let i=0; i<historyIn.length; i++) {
+                let x = startX + i * 1.6;
+                let y = centerY - historyIn[i] * ampScale;
+                if(i===0) ctxT.moveTo(x, y); else ctxT.lineTo(x, y);
+            }
+            ctxT.stroke();
+
+            // 绘制输出时域正弦波 (绿色)
+            ctxT.strokeStyle = '#10ac84';
+            ctxT.lineWidth = 2.5;
+            ctxT.beginPath();
+            for(let i=0; i<historyOut.length; i++) {
+                let x = startX + i * 1.6;
+                let y = centerY - historyOut[i] * ampScale;
+                if(i===0) ctxT.moveTo(x, y); else ctxT.lineTo(x, y);
+            }
+            ctxT.stroke();
+        }
+
+        // ==================== 画布 3：频域特征（波特简图点位） ====================
+        function renderFreq(H_mag, H_phase_deg) {
+            ctxF.clearRect(0, 0, cFreq.width, cFreq.height);
+            ctxF.fillStyle = '#57606f';
+            ctxF.font = '11px Consolas';
+            ctxF.fillText('频域分析响应 (Frequency Domain / Bode)', 15, 25);
+
+            // 画布平分为左右两边：左幅频，右相频
+            const midX = cFreq.width / 2;
+            
+            // --- 左侧：幅频图 ---
+            ctxF.strokeStyle = '#2c3e50';
+            ctxF.beginPath(); ctxF.moveTo(30, 200); ctxF.lineTo(midX - 30, 200); ctxF.stroke(); // 频率轴
+            ctxF.beginPath(); ctxF.moveTo(30, 200); ctxF.lineTo(30, 50); ctxF.stroke();      // 幅值轴
+            ctxF.fillText('幅值 |H|', 35, 48);
+
+            // 绘制当前的频域幅值响应点
+            let markerY_mag = 200 - (H_mag / 1.5) * 130;
+            ctxF.fillStyle = '#ff6b6b';
+            ctxF.beginPath(); ctxF.arc(midX / 2, markerY_mag, 6, 0, 2*Math.PI); ctxF.fill();
+            ctxF.strokeStyle = '#ff6b6b';
+            ctxF.beginPath(); ctxF.moveTo(30, markerY_mag); ctxF.lineTo(midX - 30, markerY_mag); ctxF.stroke();
+
+            // --- 右侧：相频图 ---
+            ctxF.strokeStyle = '#2c3e50';
+            ctxF.beginPath(); ctxF.moveTo(midX + 30, 125); ctxF.lineTo(cFreq.width - 30, 125); ctxF.stroke(); // 0度中心线
+            ctxF.beginPath(); ctxF.moveTo(midX + 30, 210); ctxF.lineTo(midX + 30, 40); ctxF.stroke();        // 相位轴
+            ctxF.fillText('相位 ∠H', midX + 35, 48);
+
+            // 绘制当前的频域相位响应点
+            let markerY_phase = 125 - (H_phase_deg / 180) * 80;
+            ctxF.fillStyle = '#9b59b6';
+            ctxF.beginPath(); ctxF.arc(midX + (cFreq.width - midX)/2, markerY_phase, 6, 0, 2*Math.PI); ctxF.fill();
+            ctxF.strokeStyle = '#9b59b6';
+            ctxF.beginPath(); ctxF.moveTo(midX + 30, markerY_phase); ctxF.lineTo(cFreq.width - 30, markerY_phase); ctxF.stroke();
+        }
+
+        // 通用画箭头工具函数
+        function drawVector(ctx, x1, y1, x2, y2, color, width) {
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            
+            // 尖端
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - 8 * Math.cos(angle - Math.PI/6), y2 - 8 * Math.sin(angle - Math.PI/6));
+            ctx.lineTo(x2 - 8 * Math.cos(angle + Math.PI/6), y2 - 8 * Math.sin(angle + Math.PI/6));
+            ctx.fill();
+        }
+
+        // 启动执行
+        animate();
+    </script>
+</body>
+</html>
