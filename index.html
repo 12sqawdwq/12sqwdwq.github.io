@@ -1,258 +1,1318 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Ziyu Zhao / 赵子羽 - embedded systems, robotics, AI engineering tools, biomedical computing, and digital design.">
-  <title>Ziyu Zhao | Embedded Systems & AI Engineering</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ziyu Zhao :: Arch Space</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --base: #1e1e2e;
+      --mantle: #181825;
+      --crust: #11111b;
+      --surface0: #313244;
+      --surface1: #45475a;
+      --surface2: #585b70;
+      --text: #cdd6f4;
+      --subtext: #a6adc8;
+      --muted: #7f849c;
+      --blue: #89b4fa;
+      --mauve: #cba6f7;
+      --green: #a6e3a1;
+      --teal: #94e2d5;
+      --yellow: #f9e2af;
+      --peach: #fab387;
+      --red: #f38ba8;
+      --border: rgba(205, 214, 244, 0.13);
+      --glass: rgba(30, 30, 46, 0.68);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(rgba(137, 180, 250, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(137, 180, 250, 0.055) 1px, transparent 1px),
+        radial-gradient(circle at 12% 8%, rgba(203, 166, 247, 0.18), transparent 28%),
+        radial-gradient(circle at 88% 28%, rgba(148, 226, 213, 0.12), transparent 30%),
+        var(--base);
+      background-size: 48px 48px, 48px 48px, 100% 100%, 100% 100%, auto;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.03) 0,
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      mix-blend-mode: soft-light;
+      opacity: 0.32;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .app {
+      height: 100%;
+      padding: 16px 18px 94px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .waybar {
+      height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(17, 17, 27, 0.78);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 0 12px;
+      font: 600 13px "JetBrains Mono", monospace;
+    }
+
+    .bar-left,
+    .bar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--subtext);
+      min-width: 0;
+    }
+
+    .bar-right {
+      justify-content: flex-end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(49, 50, 68, 0.55);
+      white-space: nowrap;
+    }
+
+    .workspace {
+      display: flex;
+      gap: 6px;
+    }
+
+    .ws {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--surface2);
+    }
+
+    .ws.active {
+      width: 24px;
+      background: var(--blue);
+    }
+
+    .view {
+      flex: 1;
+      min-height: 0;
+      display: none;
+      animation: enter 260ms ease both;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    @keyframes enter {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .grid {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 280px minmax(360px, 1fr) minmax(260px, 0.78fr) 300px;
+      grid-template-rows: 1.1fr 0.9fr 0.85fr;
+      grid-template-areas:
+        "profile terminal terminal docs"
+        "profile terminal terminal research"
+        "profile projects projects status";
+      gap: 14px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--glass);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 32%);
+      opacity: 0.55;
+    }
+
+    .profile { grid-area: profile; padding: 18px; display: flex; flex-direction: column; }
+    .terminal-card { grid-area: terminal; display: flex; flex-direction: column; }
+    .docs { grid-area: docs; padding: 18px; }
+    .research { grid-area: research; padding: 18px; }
+    .projects { grid-area: projects; padding: 16px 0 16px 16px; }
+    .status { grid-area: status; padding: 18px; }
+
+    .avatar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--surface0), var(--mantle));
+      display: grid;
+      place-items: center;
+      color: var(--green);
+      font: 800 22px "JetBrains Mono", monospace;
+    }
+
+    .name {
+      font-size: 1.18rem;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+
+    .handle {
+      margin-top: 5px;
+      color: var(--blue);
+      font: 600 0.78rem "JetBrains Mono", monospace;
+    }
+
+    .bio {
+      color: var(--subtext);
+      line-height: 1.65;
+      font-size: 0.92rem;
+      margin-bottom: 18px;
+    }
+
+    .info-list {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .info-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--subtext);
+      font-size: 0.86rem;
+    }
+
+    .info-row i { color: var(--mauve); font-size: 1.05rem; }
+
+    .stack-icons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .tech {
+      height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(49, 50, 68, 0.55);
+      display: grid;
+      place-items: center;
+      font-size: 1.45rem;
+    }
+
+    .socials {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(49, 50, 68, 0.56);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      font-size: 1.18rem;
+      transition: transform 160ms ease, border-color 160ms ease, color 160ms ease;
+      cursor: pointer;
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(137, 180, 250, 0.58);
+      color: var(--blue);
+    }
+
+    .term-top {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(17, 17, 27, 0.58);
+      font: 600 0.78rem "JetBrains Mono", monospace;
+      color: var(--subtext);
+    }
+
+    .dot { width: 11px; height: 11px; border-radius: 50%; }
+    .dot.red { background: var(--red); }
+    .dot.yellow { background: var(--yellow); }
+    .dot.green { background: var(--green); }
+
+    .term-screen {
+      flex: 1;
+      min-height: 0;
+      padding: 18px;
+      background: rgba(17, 17, 27, 0.42);
+      font: 500 0.92rem "JetBrains Mono", monospace;
+      overflow: auto;
+    }
+
+    .boot {
+      min-height: 100%;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 26px;
+      align-items: center;
+    }
+
+    .arch {
+      color: var(--blue);
+      font-size: 0.83rem;
+      line-height: 1.08;
+      text-shadow: 0 0 24px rgba(137, 180, 250, 0.36);
+      user-select: none;
+    }
+
+    .boot h1 {
+      font: 800 1.45rem "JetBrains Mono", monospace;
+      letter-spacing: 0;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .boot p {
+      max-width: 560px;
+      color: var(--subtext);
+      line-height: 1.65;
+      font-size: 0.95rem;
+    }
+
+    .boot-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .cmd-btn,
+    .doc-link {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(49, 50, 68, 0.66);
+      color: var(--text);
+      padding: 9px 12px;
+      font: 700 0.82rem "JetBrains Mono", monospace;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .cmd-btn:hover,
+    .doc-link:hover {
+      transform: translateY(-2px);
+      border-color: rgba(166, 227, 161, 0.62);
+      color: var(--green);
+    }
+
+    .terminal-output {
+      display: none;
+      min-height: 100%;
+    }
+
+    .terminal-output.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #terminal-log {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding-bottom: 10px;
+      white-space: pre-wrap;
+    }
+
+    .prompt-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-top: 1px solid rgba(205, 214, 244, 0.08);
+      padding-top: 10px;
+    }
+
+    .prompt {
+      color: var(--green);
+      white-space: nowrap;
+    }
+
+    .terminal-input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      color: var(--text);
+      background: transparent;
+      font: inherit;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+      font: 800 0.85rem "JetBrains Mono", monospace;
+      letter-spacing: 0.02em;
+      margin-bottom: 12px;
+    }
+
+    .plain {
+      color: var(--subtext);
+      font-size: 0.9rem;
+      line-height: 1.62;
+    }
+
+    .doc-list,
+    .fact-list {
+      display: grid;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .doc-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 11px;
+      color: var(--text);
+    }
+
+    .doc-link i { color: var(--blue); }
+    .doc-link span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .fact {
+      border-left: 2px solid var(--mauve);
+      padding-left: 11px;
+      color: var(--subtext);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .fact strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .project-strip {
+      height: calc(100% - 28px);
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(240px, 0.85fr);
+      gap: 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-right: 16px;
+      scroll-snap-type: x proximity;
+      scrollbar-color: var(--surface2) transparent;
+      scrollbar-width: thin;
+    }
+
+    .project-strip::-webkit-scrollbar,
+    .term-screen::-webkit-scrollbar,
+    .side-list::-webkit-scrollbar,
+    .article-pane::-webkit-scrollbar,
+    #terminal-log::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .project-strip::-webkit-scrollbar-track,
+    .term-screen::-webkit-scrollbar-track,
+    .side-list::-webkit-scrollbar-track,
+    .article-pane::-webkit-scrollbar-track,
+    #terminal-log::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .project-strip::-webkit-scrollbar-thumb,
+    .term-screen::-webkit-scrollbar-thumb,
+    .side-list::-webkit-scrollbar-thumb,
+    .article-pane::-webkit-scrollbar-thumb,
+    #terminal-log::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: var(--surface2);
+    }
+
+    .project {
+      scroll-snap-align: start;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(24, 24, 37, 0.72);
+      padding: 15px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: transform 160ms ease, border-color 160ms ease;
+    }
+
+    .project:hover {
+      transform: translateY(-3px);
+      border-color: rgba(137, 180, 250, 0.54);
+    }
+
+    .project h3 {
+      font: 800 0.98rem "JetBrains Mono", monospace;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .project p {
+      color: var(--subtext);
+      line-height: 1.55;
+      font-size: 0.84rem;
+      flex: 1;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 7px;
+      color: var(--teal);
+      background: rgba(148, 226, 213, 0.08);
+      font: 700 0.7rem "JetBrains Mono", monospace;
+    }
+
+    .meter {
+      height: 7px;
+      border-radius: 999px;
+      background: var(--surface0);
+      overflow: hidden;
+      margin-top: 7px;
+    }
+
+    .meter > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+    }
+
+    .blog-layout,
+    .config-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .side-list {
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .article-pane {
+      padding: 18px;
+      overflow: auto;
+    }
+
+    .note-item {
+      display: block;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: rgba(24, 24, 37, 0.72);
+      padding: 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease;
+    }
+
+    .note-item:hover,
+    .note-item.active {
+      transform: translateX(3px);
+      border-color: rgba(203, 166, 247, 0.62);
+    }
+
+    .note-item h3 {
+      font-size: 0.96rem;
+      margin-bottom: 7px;
+    }
+
+    .note-item p {
+      color: var(--subtext);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .article {
+      max-width: 860px;
+      margin: 0 auto;
+      color: var(--subtext);
+      line-height: 1.72;
+      font-size: 0.95rem;
+    }
+
+    .article h1,
+    .article h2,
+    .article h3 {
+      color: var(--text);
+      line-height: 1.25;
+      margin: 1.15em 0 0.5em;
+    }
+
+    .article h1 { margin-top: 0; font-size: 1.65rem; }
+    .article h2 { font-size: 1.2rem; color: var(--blue); }
+    .article ul { padding-left: 1.2rem; }
+    .article code {
+      color: var(--green);
+      background: rgba(166, 227, 161, 0.08);
+      padding: 0.1rem 0.3rem;
+      border-radius: 5px;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .config-card {
+      padding: 18px;
+      min-height: 160px;
+    }
+
+    .config-card h3 {
+      color: var(--blue);
+      font: 800 1rem "JetBrains Mono", monospace;
+      margin-bottom: 12px;
+    }
+
+    .config-card ul {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+      color: var(--subtext);
+      font-size: 0.9rem;
+    }
+
+    .dock {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 9px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: rgba(17, 17, 27, 0.82);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      z-index: 20;
+    }
+
+    .dock button,
+    .dock a {
+      width: 46px;
+      height: 46px;
+      border: 1px solid transparent;
+      border-radius: 15px;
+      background: transparent;
+      color: var(--subtext);
+      display: grid;
+      place-items: center;
+      font-size: 1.45rem;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .dock button:hover,
+    .dock a:hover,
+    .dock button.active {
+      transform: translateY(-4px);
+      background: rgba(137, 180, 250, 0.14);
+      color: var(--blue);
+    }
+
+    .blue { color: var(--blue); }
+    .green { color: var(--green); }
+    .mauve { color: var(--mauve); }
+    .yellow { color: var(--yellow); }
+    .red { color: var(--red); }
+
+    @media (max-width: 1080px) {
+      body { overflow: auto; }
+      html { overflow: auto; }
+      .app { min-height: 100vh; height: auto; padding-bottom: 92px; }
+      .grid {
+        height: auto;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto;
+        grid-template-areas:
+          "profile docs"
+          "terminal terminal"
+          "projects projects"
+          "research status";
+      }
+      .terminal-card { min-height: 520px; }
+      .project-strip { height: 240px; }
+      .blog-layout,
+      .config-layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .app { padding: 10px 10px 88px; }
+      .waybar { grid-template-columns: 1fr auto; }
+      .bar-left .pill:nth-child(n+2) { display: none; }
+      .bar-right { display: none; }
+      .grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "profile"
+          "terminal"
+          "docs"
+          "projects"
+          "research"
+          "status";
+      }
+      .boot { grid-template-columns: 1fr; }
+      .arch { font-size: 0.7rem; }
+      .config-grid { grid-template-columns: 1fr; }
+      .dock button,
+      .dock a { width: 42px; height: 42px; }
+    }
+  </style>
 </head>
 <body>
-  <div class="progress" aria-hidden="true"></div>
-  <header class="site-header">
-    <a class="brand" href="#top" aria-label="Home">
-      <span class="brand-mark">ZZ</span>
-      <span>
-        <strong>Ziyu Zhao</strong>
-        <small>Embedded Systems / AI Engineering</small>
-      </span>
-    </a>
-    <nav aria-label="Primary navigation">
-      <a href="#docs" data-i18n="nav.docs">文档</a>
-      <a href="#research" data-i18n="nav.research">论文</a>
-      <a href="#projects" data-i18n="nav.projects">项目</a>
-      <a href="#notes" data-i18n="nav.notes">技术博客</a>
-      <a href="#contact" data-i18n="nav.contact">联系</a>
-    </nav>
-    <button class="lang-toggle" type="button" aria-label="Switch language">
-      <span data-i18n="ui.lang">EN</span>
-    </button>
-  </header>
-
-  <main id="top">
-    <section class="hero shell">
-      <div class="signal-field" aria-hidden="true">
-        <span></span><span></span><span></span><span></span>
+  <main class="app">
+    <header class="waybar">
+      <div class="bar-left">
+        <span class="pill"><i class="ph-fill ph-terminal-window"></i> arch-space</span>
+        <span class="pill">embedded / robotics / digital design</span>
       </div>
-      <div class="hero-copy">
-        <p class="eyebrow" data-i18n="hero.eyebrow">微电子 / 嵌入式 / AI 工程工具</p>
-        <h1 data-i18n="hero.title">赵子羽</h1>
-        <p class="hero-text" data-i18n="hero.text">
-          关注嵌入式系统、机器人控制、数字设计、生物医学计算与 AI 工程工具。项目覆盖 STM32 图形引擎、ROS2 控制、LLM Agent 评测、CAE 验证和参数化 CAD 生成。
-        </p>
-        <div class="hero-actions">
-          <a class="button primary" href="CV_赵子羽_中文_latex_style.pdf" data-i18n="hero.cnResume">中文简历 PDF</a>
-          <a class="button" href="CV_Ziyu_Zhao_final.pdf" data-i18n="hero.enResume">English CV PDF</a>
-          <a class="button ghost" href="https://github.com/12sqawdwq" target="_blank" rel="noreferrer">GitHub</a>
-        </div>
+      <div class="workspace" aria-label="workspace">
+        <span class="ws active"></span><span class="ws"></span><span class="ws"></span><span class="ws"></span>
       </div>
-      <aside class="hero-panel" aria-label="Quick facts">
-        <div class="metric">
-          <b>BIBM 2025</b>
-          <span data-i18n="hero.metric1">会议论文，CCF-B</span>
-        </div>
-        <div class="metric">
-          <b>STM32 / ROS2 / Verilog</b>
-          <span data-i18n="hero.metric2">嵌入式到数字设计</span>
-        </div>
-        <div class="metric">
-          <b>FastAPI / CadQuery / ANSYS</b>
-          <span data-i18n="hero.metric3">AI 工具与工程验证</span>
-        </div>
-      </aside>
-    </section>
-
-    <section id="docs" class="band docs-band">
-      <div class="shell">
-        <div class="section-heading">
-          <p class="eyebrow" data-i18n="docs.eyebrow">醒目入口</p>
-          <h2 data-i18n="docs.title">文档与博客</h2>
-          <p data-i18n="docs.text">简历、源文档和技术说明集中放在这里。中文与英文版本都可直接阅读或下载。</p>
-        </div>
-        <div class="doc-grid">
-          <a class="doc-card featured" href="CV_赵子羽_中文_latex_style.pdf">
-            <span class="doc-type">PDF</span>
-            <strong data-i18n="docs.cnPdf">中文简历</strong>
-            <small data-i18n="docs.cnPdfDesc">两页版，适合中文岗位投递</small>
-          </a>
-          <a class="doc-card featured" href="CV_Ziyu_Zhao_final.pdf">
-            <span class="doc-type">PDF</span>
-            <strong data-i18n="docs.enPdf">English CV</strong>
-            <small data-i18n="docs.enPdfDesc">Two-page version for international applications</small>
-          </a>
-          <a class="doc-card" href="CV_赵子羽_中文.md">
-            <span class="doc-type">MD</span>
-            <strong data-i18n="docs.cnMd">中文简历源文档</strong>
-            <small data-i18n="docs.mdDesc">便于快速修改内容</small>
-          </a>
-          <a class="doc-card" href="CV_Ziyu_Zhao_optimized.md">
-            <span class="doc-type">MD</span>
-            <strong data-i18n="docs.enMd">English CV Source</strong>
-            <small data-i18n="docs.mdDescEn">Readable Markdown source</small>
-          </a>
-          <a class="doc-card" href="CV_Ziyu_Zhao_latex.tex">
-            <span class="doc-type">TEX</span>
-            <strong data-i18n="docs.tex">LaTeX 排版源</strong>
-            <small data-i18n="docs.texDesc">可在 TeX 环境继续编译</small>
-          </a>
-          <a class="doc-card" href="#notes">
-            <span class="doc-type">BLOG</span>
-            <strong data-i18n="docs.blog">技术博客入口</strong>
-            <small data-i18n="docs.blogDesc">项目结构、接口与验证流程</small>
-          </a>
-        </div>
+      <div class="bar-right">
+        <span class="pill" id="bar-date"></span>
+        <span class="pill" id="bar-time"></span>
       </div>
-    </section>
+    </header>
 
-    <section id="research" class="shell section-block">
-      <div class="section-heading">
-        <p class="eyebrow" data-i18n="research.eyebrow">Research</p>
-        <h2 data-i18n="research.title">论文发表</h2>
-      </div>
-      <article class="publication">
-        <div>
-          <h3>PAD-Former: A Two-Stage PI-RADS Classification Framework with Multi-Modal Anomaly Diffusion and Cross-Attention</h3>
-          <p>Z. Zhao, H. S. Gan, Y. Cao, Z. A. Ocal, and I. O. Koska. <em>Proc. 2025 IEEE International Conference on Bioinformatics and Biomedicine (BIBM)</em>, pp. 6162-6169.</p>
-        </div>
-        <div class="pub-links">
-          <a href="https://doi.org/10.1109/BIBM66473.2025.11356522" target="_blank" rel="noreferrer">DOI</a>
-          <span>CCF-B</span>
-          <span>BIBM 2025</span>
-        </div>
-      </article>
-    </section>
-
-    <section id="projects" class="band">
-      <div class="shell">
-        <div class="section-heading">
-          <p class="eyebrow" data-i18n="projects.eyebrow">Selected Work</p>
-          <h2 data-i18n="projects.title">项目与仓库</h2>
-          <p data-i18n="projects.text">按能力层级组织：AI 工程工具、嵌入式系统、数字设计、仿真验证和生物医学设备。</p>
-        </div>
-        <div class="project-grid">
-          <article class="project-card">
-            <img loading="lazy" src="https://raw.githubusercontent.com/12sqawdwq/MES204_lcd/main/demo.gif" alt="STM32 LCD1602 T-Rex runner demo">
+    <section id="dashboard" class="view active">
+      <div class="grid">
+        <aside class="card profile">
+          <div class="avatar-wrap">
+            <div class="avatar">ZZ</div>
             <div>
-              <p class="tag">Embedded Graphics</p>
-              <h3>STM32 LCD1602 / 20x4 LCD Engines</h3>
-              <p data-i18n="projects.lcd">基于 STM32F446xx 的字符屏渲染、定时器中断、EXTI 输入、CGRAM 资源管理与 3D/粒子/字符视频效果。</p>
-              <a href="https://github.com/12sqawdwq/MES204_lcd" target="_blank" rel="noreferrer">MES204_lcd</a>
-              <a href="https://github.com/12sqawdwq/mes204_plus" target="_blank" rel="noreferrer">mes204_plus</a>
+              <div class="name">Ziyu Zhao</div>
+              <div class="handle">@12sqawdwq</div>
             </div>
-          </article>
-          <article class="project-card">
-            <img loading="lazy" src="https://raw.githubusercontent.com/12sqawdwq/MES204_lcd/main/STM32F4MCUPackageStructure.png" alt="STM32F4 MCU package structure diagram">
-            <div>
-              <p class="tag">Digital / Chip-Level</p>
-              <h3>AXI-Stream RTL & STM32 Tooling</h3>
-              <p data-i18n="projects.rtl">AXI-Stream 包头插入模块、valid/ready 握手、keep/last 信号、字节计数与 STM32 OpenOCD/CMake/GCC 工具链封装。</p>
-              <a href="https://github.com/12sqawdwq/verilog_code_test" target="_blank" rel="noreferrer">verilog_code_test</a>
-              <a href="https://github.com/12sqawdwq/stm32-cli-toolkit" target="_blank" rel="noreferrer">stm32-cli-toolkit</a>
+          </div>
+          <p class="bio">Xi'an Jiaotong-Liverpool University undergraduate. Work covers embedded systems, robotics, digital design, CAE workflows and biomedical computing.</p>
+          <div class="info-list">
+            <div class="info-row"><i class="ph-fill ph-map-pin"></i><span>Suzhou / Shanghai</span></div>
+            <div class="info-row"><i class="ph-fill ph-graduation-cap"></i><span>BEng Microelectronic Science and Engineering</span></div>
+            <div class="info-row"><i class="ph-fill ph-flask"></i><span>BIBM 2025 paper; SIA President</span></div>
+            <div class="info-row"><i class="ph-fill ph-envelope"></i><span>ziyuzhao2027@163.com</span></div>
+          </div>
+          <div class="stack-icons" aria-label="skills">
+            <div class="tech" title="C"><i class="devicon-c-plain colored"></i></div>
+            <div class="tech" title="C++"><i class="devicon-cplusplus-plain colored"></i></div>
+            <div class="tech" title="Python"><i class="devicon-python-plain colored"></i></div>
+            <div class="tech" title="MATLAB"><i class="devicon-matlab-plain colored"></i></div>
+            <div class="tech" title="Linux"><i class="devicon-linux-plain colored"></i></div>
+            <div class="tech" title="Arduino"><i class="devicon-arduino-plain colored"></i></div>
+            <div class="tech" title="Git"><i class="devicon-git-plain colored"></i></div>
+            <div class="tech" title="Docker"><i class="devicon-docker-plain colored"></i></div>
+          </div>
+          <div class="socials">
+            <a class="icon-btn" href="https://github.com/12sqawdwq" target="_blank" title="GitHub"><i class="ph-fill ph-github-logo"></i></a>
+            <a class="icon-btn" href="mailto:ziyuzhao2027@163.com" title="Email"><i class="ph-fill ph-envelope"></i></a>
+            <a class="icon-btn" href="CV_Ziyu_Zhao_final.pdf" target="_blank" title="English CV"><i class="ph-fill ph-file-pdf"></i></a>
+          </div>
+        </aside>
+
+        <section class="card terminal-card">
+          <div class="term-top">
+            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            <span style="margin-left:auto">zsh - ziyu@arch</span>
+          </div>
+          <div class="term-screen">
+            <div id="boot" class="boot">
+              <pre class="arch">
+                   -`
+                  .o+`
+                 `ooo/
+                `+oooo:
+               `+oooooo:
+               -+oooooo+:
+             `/:-:++oooo+:
+            `/++++/+++++++:
+           `/++++++++++++++:
+          `/+++ooooooooooooo/`
+         ./ooosssso++osssssso+`
+        .oossssso-````/ossssss+`
+       -osssssso.      :ssssssso.
+      :osssssss/        osssso+++.
+     /ossssssss/        +ssssooo/-
+   `/ossssso+/:-        -:/+osssso+-
+  `+sso+:-`                 `.-/+oso:
+ `++:.                           `-/+/
+ .`                                 `/
+              </pre>
+              <div>
+                <h1>ziyuzhao@arch</h1>
+                <p>Personal workspace for resume files, engineering notes, project repositories and technical writeups. 内容以项目记录、论文、实习和文档入口为主。</p>
+                <div class="boot-actions">
+                  <button class="cmd-btn" onclick="bootTerminal()">boot terminal</button>
+                  <button class="cmd-btn" onclick="showView('blog')">open notes</button>
+                  <a class="cmd-btn" href="CV_Ziyu_Zhao_final.pdf" target="_blank">english cv</a>
+                  <a class="cmd-btn" href="CV_赵子羽_中文_latex_style.pdf" target="_blank">中文简历</a>
+                </div>
+              </div>
             </div>
-          </article>
-          <article class="project-card">
-            <img loading="lazy" src="https://raw.githubusercontent.com/12sqawdwq/PI-RADS-DETECTION/main/asset/logo-sigma.png" alt="Medical AI project logo from repository">
-            <div>
-              <p class="tag">AI / Engineering Tools</p>
-              <h3>ForgeSpec Studio & Sky Monitor API</h3>
-              <p data-i18n="projects.ai">自然语言到参数化 CAD、FastAPI 服务、CadQuery 建模、星表/星历计算、结构化 JSON 和面向 LLM 的上下文生成。</p>
-              <a href="https://github.com/12sqawdwq/ForgeSpec-Studio" target="_blank" rel="noreferrer">ForgeSpec-Studio</a>
-              <a href="https://github.com/12sqawdwq/sky_monitor_api" target="_blank" rel="noreferrer">sky_monitor_api</a>
+            <div id="terminal-output" class="terminal-output">
+              <div id="terminal-log"></div>
+              <div class="prompt-line">
+                <span class="prompt">ziyu@arch:<span id="prompt-path">~</span>$</span>
+                <input id="terminal-input" class="terminal-input" autocomplete="off" spellcheck="false" />
+              </div>
             </div>
-          </article>
-        </div>
+          </div>
+        </section>
+
+        <section class="card docs">
+          <div class="section-label"><i class="ph-fill ph-folder-open"></i> documents</div>
+          <p class="plain">Resume and source files are kept here for direct reading or download.</p>
+          <div class="doc-list">
+            <a class="doc-link" href="CV_Ziyu_Zhao_final.pdf" target="_blank"><span>CV_Ziyu_Zhao_final.pdf</span><i class="ph-fill ph-arrow-square-out"></i></a>
+            <a class="doc-link" href="CV_赵子羽_中文_latex_style.pdf" target="_blank"><span>CV_赵子羽_中文_latex_style.pdf</span><i class="ph-fill ph-arrow-square-out"></i></a>
+            <a class="doc-link" href="CV_Ziyu_Zhao_optimized.md" target="_blank"><span>CV_Ziyu_Zhao_optimized.md</span><i class="ph-fill ph-arrow-square-out"></i></a>
+            <a class="doc-link" href="CV_Ziyu_Zhao_latex.tex" target="_blank"><span>CV_Ziyu_Zhao_latex.tex</span><i class="ph-fill ph-arrow-square-out"></i></a>
+          </div>
+        </section>
+
+        <section class="card research">
+          <div class="section-label"><i class="ph-fill ph-article"></i> publication</div>
+          <div class="fact-list">
+            <div class="fact"><strong>BIBM 2025:</strong> conference paper accepted to IEEE International Conference on Bioinformatics and Biomedicine.</div>
+            <div class="fact"><strong>Topic:</strong> biomedical data analysis and disease-related computational modeling.</div>
+            <div class="fact"><strong>Service:</strong> President, Science and Innovation Association, XJTLU.</div>
+          </div>
+        </section>
+
+        <section class="card projects">
+          <div class="section-label"><i class="ph-fill ph-git-branch"></i> repositories</div>
+          <div class="project-strip" id="project-strip"></div>
+        </section>
+
+        <section class="card status">
+          <div class="section-label"><i class="ph-fill ph-cpu"></i> stack</div>
+          <div class="fact-list">
+            <div class="fact"><strong>Embedded:</strong> STM32, ESP32, OpenMV, Raspberry Pi, Jetson NX.</div>
+            <div class="fact"><strong>Hardware:</strong> Verilog, FPGA labs, PCB debugging, sensor systems.</div>
+            <div class="fact"><strong>Software:</strong> Python, C/C++, MATLAB, ROS2, FastAPI, GitHub Actions.</div>
+          </div>
+        </section>
       </div>
     </section>
 
-    <section id="notes" class="shell section-block">
-      <div class="section-heading">
-        <p class="eyebrow" data-i18n="notes.eyebrow">Technical Notes</p>
-        <h2 data-i18n="notes.title">可阅读的技术博客</h2>
-        <p data-i18n="notes.text">每篇笔记聚焦一个工程问题：输入、约束、实现路径和验证点。</p>
-      </div>
-
-      <div class="note-list">
-        <article class="note">
-          <button class="note-title" type="button">
-            <span>01</span>
-            <strong data-i18n="note.lcd.title">字符 LCD 上的实时渲染：CGRAM、状态机与中断</strong>
-          </button>
-          <div class="note-body">
-            <p data-i18n="note.lcd.p1">字符 LCD 的核心限制不是分辨率，而是可自定义字符数量和刷新时序。LCD1602/2004 只能同时保留少量 CGRAM 字形，因此动画需要在“图形资源复用”和“刷新频率”之间折中。</p>
-            <ul>
-              <li data-i18n="note.lcd.li1">输入：PC13 按键通过 EXTI 触发，避免在主循环中轮询阻塞。</li>
-              <li data-i18n="note.lcd.li2">时序：定时器中断推进游戏 tick，主循环只处理状态更新和显示提交。</li>
-              <li data-i18n="note.lcd.li3">渲染：将动态图形拆成少量可复用字符块，用状态机控制角色、障碍物和滚动窗口。</li>
-              <li data-i18n="note.lcd.li4">验证：观察按键响应、动画抖动、CGRAM 更新频率和 LCD 命令延迟。</li>
-            </ul>
-          </div>
-        </article>
-
-        <article class="note">
-          <button class="note-title" type="button">
-            <span>02</span>
-            <strong data-i18n="note.axi.title">AXI-Stream 包头插入模块如何验证</strong>
-          </button>
-          <div class="note-body">
-            <p data-i18n="note.axi.p1">包头插入模块的风险集中在边界时序：header 与 payload 的首拍对齐、keep 字节有效掩码、last 信号传播，以及 ready 反压下的缓存一致性。</p>
-            <ul>
-              <li data-i18n="note.axi.li1">接口：valid/ready 决定传输是否发生；keep 描述每拍有效字节；last 标记包尾。</li>
-              <li data-i18n="note.axi.li2">状态：inserting_header、byte_cnt、buffer_valid 用于跟踪插入阶段和暂存数据。</li>
-              <li data-i18n="note.axi.li3">测试：覆盖 header 长度为 0、非整拍、整拍、多拍，以及 ready_out 拉低的场景。</li>
-              <li data-i18n="note.axi.li4">输出检查：data_out 顺序、keep_out 掩码、last_out 时刻和 ready_in 反压行为。</li>
-            </ul>
-          </div>
-        </article>
-
-        <article class="note">
-          <button class="note-title" type="button">
-            <span>03</span>
-            <strong data-i18n="note.cae.title">CAE 仿真验证不只看文件是否存在</strong>
-          </button>
-          <div class="note-body">
-            <p data-i18n="note.cae.p1">仿真自动化交付需要检查求解状态和结果对象，而不是只检查 Workbench 项目是否保存。一个可复核的 Mechanical 结果至少应包含网格、载荷、边界条件、求解完成状态和后处理数值。</p>
-            <ul>
-              <li data-i18n="note.cae.li1">前处理：几何单位、材料、约束、载荷方向和接触设置。</li>
-              <li data-i18n="note.cae.li2">求解：solver 状态、错误/警告日志、收敛或静力平衡信息。</li>
-              <li data-i18n="note.cae.li3">后处理：contour、legend、Min/Max 数值、结果对象 evaluated 状态。</li>
-              <li data-i18n="note.cae.li4">交付：项目文件、截图、结果摘要和可重复执行的脚本入口。</li>
-            </ul>
-          </div>
-        </article>
-
-        <article class="note">
-          <button class="note-title" type="button">
-            <span>04</span>
-            <strong data-i18n="note.sky.title">观星 API 的数据流：星表、星历和前端星图</strong>
-          </button>
-          <div class="note-body">
-            <p data-i18n="note.sky.p1">Sky Monitor API 将天文计算拆成三层：本地星表查询、行星星历计算、面向前端的极坐标投影。这样前端不需要理解天体力学，只消费 chart_x、chart_y、radius 和解释文本。</p>
-            <ul>
-              <li data-i18n="note.sky.li1">星表：HYG Database 构建 SQLite 索引，按亮度和高度角筛选。</li>
-              <li data-i18n="note.sky.li2">行星：Skyfield 读取 JPL DE421 星历，计算观测时间下的高度角与方位角。</li>
-              <li data-i18n="note.sky.li3">深空天体：Messier/NGC 元数据补充类型、名称和观测建议。</li>
-              <li data-i18n="note.sky.li4">输出：JSON 同时服务星图绘制和 LLM 观测建议生成。</li>
-            </ul>
-          </div>
+    <section id="blog" class="view">
+      <div class="blog-layout">
+        <aside class="card side-list">
+          <div class="section-label"><i class="ph-fill ph-notebook"></i> technical notes</div>
+          <div id="note-list"></div>
+        </aside>
+        <article class="card article-pane">
+          <div id="article" class="article"></div>
         </article>
       </div>
     </section>
 
-    <section id="contact" class="band footer-band">
-      <div class="shell contact-row">
-        <div>
-          <p class="eyebrow">Contact</p>
-          <h2>Ziyu Zhao / 赵子羽</h2>
-        </div>
-        <div class="contact-links">
-          <a href="mailto:ziyuzhao2027@163.com">ziyuzhao2027@163.com</a>
-          <a href="tel:+8618439471396">+86 18439471396</a>
-          <a href="https://github.com/12sqawdwq" target="_blank" rel="noreferrer">GitHub</a>
-        </div>
+    <section id="config" class="view">
+      <div class="config-layout">
+        <aside class="card side-list">
+          <div class="section-label"><i class="ph-fill ph-sliders-horizontal"></i> workspace</div>
+          <p class="plain">This page keeps factual context only: documents, project categories and commonly used tools.</p>
+          <div class="doc-list">
+            <a class="doc-link" href="CV_Ziyu_Zhao_final.pdf" target="_blank"><span>English CV PDF</span><i class="ph-fill ph-file-pdf"></i></a>
+            <a class="doc-link" href="CV_赵子羽_中文_latex_style.pdf" target="_blank"><span>中文简历 PDF</span><i class="ph-fill ph-file-pdf"></i></a>
+            <a class="doc-link" href="https://github.com/12sqawdwq" target="_blank"><span>GitHub profile</span><i class="ph-fill ph-github-logo"></i></a>
+          </div>
+        </aside>
+        <section class="card article-pane">
+          <div class="config-grid">
+            <div class="card config-card">
+              <h3>embedded</h3>
+              <ul>
+                <li>STM32 HAL / CubeMX / OpenOCD</li>
+                <li>LCD1602, sensors, EXTI, timer interrupt</li>
+                <li>OpenMV tracking and camera-based control</li>
+                <li>Linux/headless board workflow</li>
+              </ul>
+            </div>
+            <div class="card config-card">
+              <h3>digital design</h3>
+              <ul>
+                <li>Verilog labs and AXI-Stream exercises</li>
+                <li>Vivado simulation and board validation</li>
+                <li>Basic timing, reset and handshake checks</li>
+              </ul>
+            </div>
+            <div class="card config-card">
+              <h3>computing</h3>
+              <ul>
+                <li>Python data processing and FastAPI services</li>
+                <li>MATLAB visualization and numerical scripts</li>
+                <li>ROS2 nodes and Jetson / Raspberry Pi setup</li>
+              </ul>
+            </div>
+            <div class="card config-card">
+              <h3>engineering docs</h3>
+              <ul>
+                <li>Resume source in Markdown and LaTeX</li>
+                <li>CAE validation notes for ANSYS workflows</li>
+                <li>Repository READMEs and reproducible setup notes</li>
+              </ul>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
   </main>
 
-  <script src="script.js"></script>
+  <nav class="dock" aria-label="navigation">
+    <button class="active" data-view="dashboard" title="Dashboard"><i class="ph-fill ph-squares-four"></i></button>
+    <button onclick="bootTerminal()" title="Terminal"><i class="ph-fill ph-terminal"></i></button>
+    <button data-view="blog" title="Notes"><i class="ph-fill ph-notebook"></i></button>
+    <button data-view="config" title="Config"><i class="ph-fill ph-sliders-horizontal"></i></button>
+    <a href="https://github.com/12sqawdwq" target="_blank" title="GitHub"><i class="ph-fill ph-github-logo"></i></a>
+  </nav>
+
+  <script>
+    const projects = [
+      {
+        name: "MES204_lcd",
+        href: "https://github.com/12sqawdwq/MES204_lcd",
+        desc: "STM32 LCD1602 project with custom CGRAM characters, timer-driven display updates and limited-memory UI logic.",
+        tags: ["STM32", "LCD1602", "C"]
+      },
+      {
+        name: "mes204_plus",
+        href: "https://github.com/12sqawdwq/mes204_plus",
+        desc: "Extended embedded coursework repository for sensor acquisition, interrupt handling and board-level testing.",
+        tags: ["Embedded", "Sensors", "HAL"]
+      },
+      {
+        name: "openmv_green_tracking",
+        href: "https://github.com/12sqawdwq/openmv_green_tracking",
+        desc: "OpenMV color tracking workflow for green target detection, threshold tuning and camera-side control experiments.",
+        tags: ["OpenMV", "Vision", "Robotics"]
+      },
+      {
+        name: "verilog_code_test",
+        href: "https://github.com/12sqawdwq/verilog_code_test",
+        desc: "Digital logic exercises covering simulation, module boundaries and AXI-Stream style handshakes.",
+        tags: ["Verilog", "FPGA", "Vivado"]
+      },
+      {
+        name: "stm32-cli-toolkit",
+        href: "https://github.com/12sqawdwq/stm32-cli-toolkit",
+        desc: "Shell toolkit for STM32 build, flash and reset operations on Linux/headless development machines.",
+        tags: ["CLI", "OpenOCD", "CMake"]
+      },
+      {
+        name: "sky_monitor_api",
+        href: "https://github.com/12sqawdwq/sky_monitor_api",
+        desc: "FastAPI service for star catalog queries, sky-coordinate conversion and chart-ready JSON output.",
+        tags: ["FastAPI", "Skyfield", "SQLite"]
+      },
+      {
+        name: "ForgeSpec-Studio",
+        href: "https://github.com/12sqawdwq/ForgeSpec-Studio",
+        desc: "Engineering specification workspace for CAD-like component descriptions and structured project documentation.",
+        tags: ["CadQuery", "Docs", "Tooling"]
+      },
+      {
+        name: "ANSYS_skill",
+        href: "https://github.com/12sqawdwq/ANSYS_skill",
+        desc: "CAE checklist repository for Mechanical setup, mesh/load/solve review and result evidence capture.",
+        tags: ["ANSYS", "CAE", "FEM"]
+      }
+    ];
+
+    const notes = [
+      {
+        title: "LCD1602 display workflow",
+        meta: "STM32 / C / embedded UI",
+        body: `# LCD1602 display workflow
+
+The project uses an LCD1602 module as a constrained display target. The useful part is not the screen itself, but the way state is reduced before it reaches the display buffer.
+
+## Implementation notes
+
+- Custom symbols are written into CGRAM and then referenced by index. This keeps repeated drawing operations small.
+- Timer-driven refresh avoids blocking the main loop with long display operations.
+- External input is handled through interrupt paths and converted into compact UI state.
+- The display layer is separated from sensor/control logic so that board tests can isolate I/O faults.
+
+## Checks
+
+The project is easiest to debug by separating three cases: power and contrast, GPIO timing, and state update logic. Most visible errors fall into one of these groups.`
+      },
+      {
+        title: "AXI-Stream header insertion",
+        meta: "Verilog / FPGA / handshake",
+        body: `# AXI-Stream header insertion
+
+This note records the validation points for an AXI-Stream style header insertion module.
+
+## Signals to keep stable
+
+- \`tvalid\` indicates that the current word is meaningful.
+- \`tready\` is the downstream permission to move data.
+- \`tlast\` must remain aligned with the final payload word after header insertion.
+- \`tkeep\` has to match the valid byte lanes after width conversion or packet padding.
+
+## Test cases
+
+Use packets with single-word payloads, multi-word payloads, backpressure on the first transfer, and backpressure near \`tlast\`. The small cases catch most state-machine errors before board testing.`
+      },
+      {
+        title: "CAE validation checklist",
+        meta: "ANSYS / FEM / CFD",
+        body: `# CAE validation checklist
+
+The repository is organized around evidence that a simulation can be reviewed, not only reopened.
+
+## Minimum record
+
+- Geometry source and version.
+- Mesh method, element size and local refinement rules.
+- Boundary conditions and load directions.
+- Solver status and convergence messages.
+- Result contour with legend, units, Min/Max values and screenshot date.
+
+## Reasoning
+
+For a short engineering review, the result image alone is not enough. The setup must show where the constraints, loads and numerical assumptions enter the model.`
+      },
+      {
+        title: "Sky monitor data path",
+        meta: "FastAPI / astronomy / JSON",
+        body: `# Sky monitor data path
+
+The sky monitor service turns catalog and ephemeris data into API responses that can be plotted by a lightweight client.
+
+## Pipeline
+
+- Query star records from local storage.
+- Use Skyfield ephemeris data for coordinate calculations.
+- Normalize output into chart-oriented JSON.
+- Keep API routes small so each route maps to one data product.
+
+## Output
+
+The useful output is not raw catalog data. The endpoint should return position, magnitude and labeling fields in the shape needed by the visualization layer.`
+      }
+    ];
+
+    const fileSystem = {
+      "/home/ziyu": ["projects", "documents", "notes", "README.md", "publication.txt"],
+      "/home/ziyu/projects": projects.map(project => project.name),
+      "/home/ziyu/documents": [
+        "CV_Ziyu_Zhao_final.pdf",
+        "CV_赵子羽_中文_latex_style.pdf",
+        "CV_Ziyu_Zhao_optimized.md",
+        "CV_Ziyu_Zhao_latex.tex"
+      ],
+      "/home/ziyu/notes": notes.map(note => note.title.replaceAll(" ", "_") + ".md")
+    };
+
+    let currentPath = "/home/ziyu";
+    let terminalReady = false;
+    const log = document.getElementById("terminal-log");
+    const input = document.getElementById("terminal-input");
+    const promptPath = document.getElementById("prompt-path");
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById("bar-date").textContent = now.toLocaleDateString("zh-CN", { month: "2-digit", day: "2-digit", weekday: "short" });
+      document.getElementById("bar-time").textContent = now.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function renderProjects() {
+      const strip = document.getElementById("project-strip");
+      strip.innerHTML = projects.map(project => `
+        <a class="project" href="${project.href}" target="_blank">
+          <h3>${project.name}</h3>
+          <p>${project.desc}</p>
+          <div class="tags">${project.tags.map(tag => `<span class="tag">${tag}</span>`).join("")}</div>
+        </a>
+      `).join("");
+    }
+
+    function renderNotes(activeIndex = 0) {
+      const list = document.getElementById("note-list");
+      list.innerHTML = notes.map((note, index) => `
+        <button class="note-item ${index === activeIndex ? "active" : ""}" onclick="renderNotes(${index})">
+          <h3>${note.title}</h3>
+          <p>${note.meta}</p>
+        </button>
+      `).join("");
+      document.getElementById("article").innerHTML = marked.parse(notes[activeIndex].body);
+    }
+
+    function showView(id) {
+      document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === id));
+      document.querySelectorAll(".dock button[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === id));
+    }
+
+    function printLine(html = "") {
+      const row = document.createElement("div");
+      row.innerHTML = html;
+      log.appendChild(row);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function bootTerminal() {
+      showView("dashboard");
+      document.getElementById("boot").style.display = "none";
+      document.getElementById("terminal-output").classList.add("active");
+      terminalReady = true;
+      if (!log.dataset.booted) {
+        log.dataset.booted = "true";
+        printLine(`<span class="blue">Arch Space</span> loaded. Type <span class="green">help</span> to list commands.`);
+        printLine(``);
+        runCommand("neofetch", true);
+      }
+      input.focus();
+    }
+
+    function normalizePath(target) {
+      if (!target || target === "~") return "/home/ziyu";
+      if (target === "..") {
+        if (currentPath === "/home/ziyu") return currentPath;
+        return currentPath.split("/").slice(0, -1).join("/") || "/";
+      }
+      if (target.startsWith("/")) return target;
+      return `${currentPath}/${target}`.replaceAll("//", "/");
+    }
+
+    function listPath(path) {
+      if (Array.isArray(fileSystem[path])) return fileSystem[path].join("  ");
+      return null;
+    }
+
+    function runCommand(raw, silent = false) {
+      const command = raw.trim();
+      if (!command) return;
+      if (!silent) printLine(`<span class="prompt">ziyu@arch:${promptPath.textContent}$</span> ${command}`);
+      const [cmd, ...args] = command.split(/\s+/);
+      const rest = args.join(" ");
+
+      switch (cmd) {
+        case "help":
+          printLine(`<span class="green">help</span>       show commands`);
+          printLine(`<span class="green">ls</span>         list files`);
+          printLine(`<span class="green">cd [dir]</span>   change directory`);
+          printLine(`<span class="green">cat [file]</span>  print file`);
+          printLine(`<span class="green">docs</span>       open document panel`);
+          printLine(`<span class="green">notes</span>      open technical notes`);
+          printLine(`<span class="green">repo [name]</span> open repository`);
+          printLine(`<span class="green">neofetch</span>   show profile`);
+          printLine(`<span class="green">clear</span>      clear terminal`);
+          break;
+        case "ls": {
+          const target = normalizePath(rest);
+          const content = listPath(rest ? target : currentPath);
+          printLine(content ? content : `<span class="red">not a directory: ${rest || currentPath}</span>`);
+          break;
+        }
+        case "pwd":
+          printLine(currentPath);
+          break;
+        case "cd": {
+          const target = normalizePath(rest);
+          if (Array.isArray(fileSystem[target])) {
+            currentPath = target;
+            promptPath.textContent = currentPath === "/home/ziyu" ? "~" : currentPath.replace("/home/ziyu", "~");
+          } else {
+            printLine(`<span class="red">no such directory: ${rest}</span>`);
+          }
+          break;
+        }
+        case "cat":
+          catFile(rest);
+          break;
+        case "docs":
+          showView("config");
+          break;
+        case "notes":
+          showView("blog");
+          break;
+        case "repo":
+          openRepo(rest);
+          break;
+        case "neofetch":
+          printLine(`<span class="blue">       /\\        </span>  <span class="green">ziyu</span>@<span class="green">arch-space</span>`);
+          printLine(`<span class="blue">      /  \\       </span>  OS: Arch-style static site`);
+          printLine(`<span class="blue">     / /\\ \\      </span>  Focus: Embedded / Robotics / Digital Design`);
+          printLine(`<span class="blue">    / ____ \\     </span>  CV: English + Chinese PDFs`);
+          printLine(`<span class="blue">   /_/    \\_\\    </span>  GitHub: github.com/12sqawdwq`);
+          break;
+        case "clear":
+          log.innerHTML = "";
+          break;
+        default:
+          printLine(`<span class="red">command not found:</span> ${cmd}`);
+      }
+    }
+
+    function catFile(name) {
+      if (!name) {
+        printLine(`<span class="red">usage:</span> cat [file]`);
+        return;
+      }
+      if (name === "README.md") {
+        printLine(`# Ziyu Zhao`);
+        printLine(`Embedded systems, robotics, digital design and biomedical computing.`);
+        printLine(`Documents: CV_Ziyu_Zhao_final.pdf, CV_赵子羽_中文_latex_style.pdf`);
+        return;
+      }
+      if (name === "publication.txt") {
+        printLine(`BIBM 2025 conference paper, IEEE International Conference on Bioinformatics and Biomedicine.`);
+        return;
+      }
+      const project = projects.find(item => item.name === name);
+      if (project) {
+        printLine(`${project.name}`);
+        printLine(project.desc);
+        printLine(project.href);
+        return;
+      }
+      const note = notes.find(item => `${item.title.replaceAll(" ", "_")}.md` === name);
+      if (note) {
+        printLine(note.body.replaceAll("#", ""));
+        return;
+      }
+      printLine(`<span class="red">file not found:</span> ${name}`);
+    }
+
+    function openRepo(name) {
+      if (!name) {
+        printLine(`<span class="red">usage:</span> repo [name]`);
+        return;
+      }
+      const project = projects.find(item => item.name.toLowerCase() === name.toLowerCase());
+      if (!project) {
+        printLine(`<span class="red">repo not found:</span> ${name}`);
+        return;
+      }
+      window.open(project.href, "_blank");
+      printLine(`opened ${project.href}`);
+    }
+
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        runCommand(input.value);
+        input.value = "";
+      }
+    });
+
+    document.querySelectorAll(".dock button[data-view]").forEach(button => {
+      button.addEventListener("click", () => showView(button.dataset.view));
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "`" && !terminalReady) bootTerminal();
+    });
+
+    updateClock();
+    setInterval(updateClock, 30000);
+    renderProjects();
+    renderNotes();
+  </script>
 </body>
 </html>
