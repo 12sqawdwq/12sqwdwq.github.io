@@ -226,7 +226,7 @@
     .grid {
       height: 100%;
       display: grid;
-      grid-template-columns: 220px minmax(420px, 1fr) minmax(300px, 0.92fr) 260px;
+      grid-template-columns: 240px minmax(420px, 1fr) minmax(300px, 0.92fr) 260px;
       grid-template-rows: 0.86fr 0.66fr 0.66fr;
       grid-template-areas:
         "profile terminal terminal docs"
@@ -300,6 +300,7 @@
       line-height: 1.65;
       font-size: 0.86rem;
       margin-bottom: 14px;
+      overflow-wrap: anywhere;
     }
 
     .info-list {
@@ -317,6 +318,12 @@
     }
 
     .info-row i { color: var(--mauve); font-size: 1.05rem; }
+
+    .info-row span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      line-height: 1.25;
+    }
 
     .stack-icons {
       display: grid;
@@ -593,6 +600,44 @@
       display: grid;
       gap: 9px;
       margin-top: 12px;
+    }
+
+    .blog-jump {
+      display: block;
+      border: 1px solid rgba(166, 227, 161, 0.46);
+      border-radius: 14px;
+      padding: 13px 13px 12px;
+      margin-top: 12px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(166, 227, 161, 0.24), transparent 42%),
+        linear-gradient(135deg, rgba(137, 180, 250, 0.18), rgba(203, 166, 247, 0.08));
+      box-shadow: 0 0 28px rgba(166, 227, 161, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+      text-align: left;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .blog-jump:hover {
+      transform: translateY(-2px);
+      border-color: rgba(166, 227, 161, 0.78);
+      box-shadow: 0 0 34px rgba(166, 227, 161, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .blog-jump strong {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+      font: 800 0.88rem "JetBrains Mono", monospace;
+      margin-bottom: 6px;
+    }
+
+    .blog-jump span {
+      display: block;
+      color: var(--subtext);
+      font-size: 0.78rem;
+      line-height: 1.4;
     }
 
     .doc-link {
@@ -893,6 +938,7 @@
       .project-strip { height: 240px; }
       .blog-layout,
       .config-layout { grid-template-columns: 1fr; }
+      .bar-left .pill:nth-child(2) { display: none; }
       .assistant-shell { grid-template-columns: 1fr; }
       .assistant-manual { border-left: 0; border-top: 1px solid var(--border); max-height: 210px; }
     }
@@ -1006,6 +1052,10 @@
         <section class="card docs">
           <div class="section-label"><i class="ph-fill ph-folder-open"></i> documents</div>
           <p class="plain">Resume and source files are kept here for direct reading or download.</p>
+          <button class="blog-jump" onclick="showView('blog')">
+            <strong><i class="ph-fill ph-notebook"></i> open docs blog</strong>
+            <span>Read project README notes, CV source map, and technical documentation.</span>
+          </button>
           <div class="doc-list">
             <a class="doc-link" href="CV_Ziyu_Zhao_final.pdf" target="_blank"><span>CV_Ziyu_Zhao_final.pdf</span><i class="ph-fill ph-arrow-square-out"></i></a>
             <a class="doc-link" href="CV_赵子羽_中文_latex_style.pdf" target="_blank"><span>CV_赵子羽_中文_latex_style.pdf</span><i class="ph-fill ph-arrow-square-out"></i></a>
