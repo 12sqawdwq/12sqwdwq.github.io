@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -381,10 +381,95 @@
     .term-screen {
       flex: 1;
       min-height: 0;
-      padding: 14px 18px;
+      padding: 0;
       background: rgba(17, 17, 27, 0.42);
       font: 500 0.92rem "JetBrains Mono", monospace;
       overflow: auto;
+    }
+
+    .assistant-shell {
+      height: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 286px;
+      gap: 0;
+    }
+
+    .assistant-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 16px;
+    }
+
+    .assistant-manual {
+      border-left: 1px solid var(--border);
+      background: rgba(24, 24, 37, 0.42);
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .manual-title {
+      color: var(--green);
+      font: 800 0.84rem "JetBrains Mono", monospace;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .manual-list {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .manual-command {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(49, 50, 68, 0.5);
+      padding: 8px;
+      cursor: pointer;
+      transition: border-color 160ms ease, transform 160ms ease;
+    }
+
+    .manual-command:hover {
+      border-color: rgba(166, 227, 161, 0.58);
+      transform: translateX(2px);
+    }
+
+    .manual-command code {
+      display: block;
+      color: var(--blue);
+      font: 800 0.78rem "JetBrains Mono", monospace;
+      margin-bottom: 3px;
+    }
+
+    .manual-command span {
+      color: var(--subtext);
+      font: 500 0.74rem Inter, sans-serif;
+      line-height: 1.36;
+    }
+
+    .preset-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .preset {
+      border: 1px solid rgba(137, 180, 250, 0.24);
+      border-radius: 999px;
+      background: rgba(137, 180, 250, 0.08);
+      color: var(--text);
+      padding: 6px 9px;
+      font: 700 0.72rem "JetBrains Mono", monospace;
+      cursor: pointer;
+    }
+
+    .preset:hover {
+      border-color: rgba(137, 180, 250, 0.64);
+      color: var(--blue);
     }
 
     .boot {
@@ -445,8 +530,10 @@
     }
 
     .terminal-output {
-      display: none;
-      min-height: 100%;
+      display: flex;
+      height: 100%;
+      min-height: 0;
+      flex-direction: column;
     }
 
     .terminal-output.active {
@@ -553,6 +640,7 @@
     .term-screen::-webkit-scrollbar,
     .side-list::-webkit-scrollbar,
     .article-pane::-webkit-scrollbar,
+    .assistant-manual::-webkit-scrollbar,
     #terminal-log::-webkit-scrollbar {
       width: 8px;
       height: 8px;
@@ -562,6 +650,7 @@
     .term-screen::-webkit-scrollbar-track,
     .side-list::-webkit-scrollbar-track,
     .article-pane::-webkit-scrollbar-track,
+    .assistant-manual::-webkit-scrollbar-track,
     #terminal-log::-webkit-scrollbar-track {
       background: transparent;
     }
@@ -570,6 +659,7 @@
     .term-screen::-webkit-scrollbar-thumb,
     .side-list::-webkit-scrollbar-thumb,
     .article-pane::-webkit-scrollbar-thumb,
+    .assistant-manual::-webkit-scrollbar-thumb,
     #terminal-log::-webkit-scrollbar-thumb {
       border-radius: 999px;
       background: var(--surface2);
@@ -803,6 +893,8 @@
       .project-strip { height: 240px; }
       .blog-layout,
       .config-layout { grid-template-columns: 1fr; }
+      .assistant-shell { grid-template-columns: 1fr; }
+      .assistant-manual { border-left: 0; border-top: 1px solid var(--border); max-height: 210px; }
     }
 
     @media (max-width: 720px) {
@@ -821,6 +913,7 @@
           "status";
       }
       .boot { grid-template-columns: 1fr; }
+      .assistant-main { padding: 12px; }
       .arch { font-size: 0.7rem; }
       .config-grid { grid-template-columns: 1fr; }
       .dock button,
@@ -890,45 +983,22 @@
             <span style="margin-left:auto">zsh - ziyu@arch</span>
           </div>
           <div class="term-screen">
-            <div id="boot" class="boot">
-              <pre class="arch">
-                   -`
-                  .o+`
-                 `ooo/
-                `+oooo:
-               `+oooooo:
-               -+oooooo+:
-             `/:-:++oooo+:
-            `/++++/+++++++:
-           `/++++++++++++++:
-          `/+++ooooooooooooo/`
-         ./ooosssso++osssssso+`
-        .oossssso-````/ossssss+`
-       -osssssso.      :ssssssso.
-      :osssssss/        osssso+++.
-     /ossssssss/        +ssssooo/-
-   `/ossssso+/:-        -:/+osssso+-
-  `+sso+:-`                 `.-/+oso:
- `++:.                           `-/+/
- .`                                 `/
-              </pre>
-              <div>
-                <h1>ziyuzhao@arch</h1>
-                <p>Creative space for resume files, engineering notes, project repositories and technical writeups. 内容以项目记录、论文、实习和文档入口为主。</p>
-                <div class="boot-actions">
-                  <button class="cmd-btn" onclick="bootTerminal()">boot terminal</button>
-                  <button class="cmd-btn" onclick="showView('blog')">open notes</button>
-                  <a class="cmd-btn" href="CV_Ziyu_Zhao_final.pdf" target="_blank">english cv</a>
-                  <a class="cmd-btn" href="CV_赵子羽_中文_latex_style.pdf" target="_blank">中文简历</a>
+            <div class="assistant-shell">
+              <div class="assistant-main">
+                <div class="preset-grid" id="preset-grid"></div>
+                <div id="terminal-output" class="terminal-output active">
+                  <div id="terminal-log"></div>
+                  <div class="prompt-line">
+                    <span class="prompt">ask@ziyu:<span id="prompt-path">~</span>$</span>
+                    <input id="terminal-input" class="terminal-input" autocomplete="off" spellcheck="false" placeholder="try: about / projects / read sky_monitor_api / why embedded" />
+                  </div>
                 </div>
               </div>
-            </div>
-            <div id="terminal-output" class="terminal-output">
-              <div id="terminal-log"></div>
-              <div class="prompt-line">
-                <span class="prompt">ziyu@arch:<span id="prompt-path">~</span>$</span>
-                <input id="terminal-input" class="terminal-input" autocomplete="off" spellcheck="false" />
-              </div>
+              <aside class="assistant-manual">
+                <div class="manual-title"><i class="ph-fill ph-book-open-text"></i> manual</div>
+                <div class="manual-list" id="manual-list"></div>
+                <p class="plain">Commands also accept short questions such as "show embedded projects", "publication", "contact", or "read ANSYS_skill".</p>
+              </aside>
             </div>
           </div>
         </section>
@@ -1035,7 +1105,6 @@
 
   <nav class="dock" aria-label="navigation">
     <button class="active" data-view="dashboard" title="Dashboard"><i class="ph-fill ph-squares-four"></i></button>
-    <button onclick="bootTerminal()" title="Terminal"><i class="ph-fill ph-terminal"></i></button>
     <button data-view="blog" title="Notes"><i class="ph-fill ph-notebook"></i></button>
     <button data-view="config" title="Config"><i class="ph-fill ph-sliders-horizontal"></i></button>
     <a href="https://github.com/12sqawdwq" target="_blank" title="GitHub"><i class="ph-fill ph-github-logo"></i></a>
@@ -1095,78 +1164,217 @@
 
     const notes = [
       {
-        title: "LCD1602 display workflow",
-        meta: "STM32 / C / embedded UI",
-        body: `# LCD1602 display workflow
+        title: "MES204_lcd README",
+        meta: "source: GitHub README / STM32 LCD1602",
+        repo: "MES204_lcd",
+        body: `# MES204_lcd README
 
-The project uses an LCD1602 module as a constrained display target. The useful part is not the screen itself, but the way state is reduced before it reaches the display buffer.
+Source: https://github.com/12sqawdwq/MES204_lcd
 
-## Implementation notes
+## Project abstract
 
-- Custom symbols are written into CGRAM and then referenced by index. This keeps repeated drawing operations small.
-- Timer-driven refresh avoids blocking the main loop with long display operations.
-- External input is handled through interrupt paths and converted into compact UI state.
-- The display layer is separated from sensor/control logic so that board tests can isolate I/O faults.
+STM32 T-Rex Runner is an embedded real-time system on STM32F446xx. The project ports a simple runner game to LCD1602 and treats the character display as a constrained rendering target.
 
-## Checks
+## Technical points from the project document
 
-The project is easiest to debug by separating three cases: power and contrast, GPIO timing, and state update logic. Most visible errors fall into one of these groups.`
+- LCD1602 rendering engine with Custom Graphics RAM (CGRAM) resource management.
+- Timer interrupts for deterministic animation timing.
+- EXTI input path for low-latency button response.
+- Non-blocking state machine to keep gameplay responsive under limited display memory.
+
+## Resume mapping
+
+This is the strongest embedded display project for showing constrained UI design, firmware architecture and board-level debugging.`
       },
       {
-        title: "AXI-Stream header insertion",
-        meta: "Verilog / FPGA / handshake",
-        body: `# AXI-Stream header insertion
+        title: "mes204_plus README",
+        meta: "source: GitHub README / STM32 LCD2004 graphics",
+        repo: "mes204_plus",
+        body: `# mes204_plus README
 
-This note records the validation points for an AXI-Stream style header insertion module.
+Source: https://github.com/12sqawdwq/mes204_plus
 
-## Signals to keep stable
+## Project scope
 
-- \`tvalid\` indicates that the current word is meaningful.
-- \`tready\` is the downstream permission to move data.
-- \`tlast\` must remain aligned with the final payload word after header insertion.
-- \`tkeep\` has to match the valid byte lanes after width conversion or packet padding.
+MES204 Final Project is an STM32F446xx 20x4 LCD graphics engine. It explores what can be rendered on limited character LCD hardware.
 
-## Test cases
+## Features recorded in the repository
 
-Use packets with single-word payloads, multi-word payloads, backpressure on the first transfer, and backpressure near \`tlast\`. The small cases catch most state-machine errors before board testing.`
+- Optimized 8-bit parallel driver for an HD44780-compatible LCD.
+- Graphics primitives used as the basis for higher-level effects.
+- Wireframe 3D renderer for simple object transforms.
+- Mathematical visual effects, particle effects and character-video playback.
+- CMake and ARM GCC workflow for reproducible builds.
+
+## Why it matters
+
+Compared with a normal LCD demo, this project shows rendering abstraction, timing awareness and display-resource tradeoffs.`
       },
       {
-        title: "CAE validation checklist",
-        meta: "ANSYS / FEM / CFD",
-        body: `# CAE validation checklist
+        title: "verilog_code_test README",
+        meta: "source: GitHub README / AXI-Stream RTL",
+        repo: "verilog_code_test",
+        body: `# verilog_code_test README
 
-The repository is organized around evidence that a simulation can be reviewed, not only reopened.
+Source: https://github.com/12sqawdwq/verilog_code_test
 
-## Minimum record
+## Module
 
-- Geometry source and version.
-- Mesh method, element size and local refinement rules.
-- Boundary conditions and load directions.
-- Solver status and convergence messages.
-- Result contour with legend, units, Min/Max values and screenshot date.
+AXI Stream header insertion module.
 
-## Reasoning
+## Parameters and ports
 
-For a short engineering review, the result image alone is not enough. The setup must show where the constraints, loads and numerical assumptions enter the model.`
+- DATA_WD: data width, default 32 bits.
+- DATA_BYTE_WD: byte width derived from DATA_WD.
+- valid_in / data_in / keep_in / last_in / ready_in for input stream control.
+- valid_out / data_out / keep_out / last_out / ready_out for output stream control.
+- valid_insert / data_insert / keep_insert / byte_insert_cnt for header insertion.
+
+## Internal logic recorded in the document
+
+The README describes valid registers, output data registers, byte counters, insertion state, buffer-valid flags and buffered data. The main review point is whether ready/valid handshaking preserves continuous transfer without bubbles.`
       },
       {
-        title: "Sky monitor data path",
-        meta: "FastAPI / astronomy / JSON",
-        body: `# Sky monitor data path
+        title: "stm32-cli-toolkit README",
+        meta: "source: GitHub README / Bash-Zsh tooling",
+        repo: "stm32-cli-toolkit",
+        body: `# stm32-cli-toolkit README
 
-The sky monitor service turns catalog and ephemeris data into API responses that can be plotted by a lightweight client.
+Source: https://github.com/12sqawdwq/stm32-cli-toolkit
 
-## Pipeline
+## Purpose
 
-- Query star records from local storage.
-- Use Skyfield ephemeris data for coordinate calculations.
-- Normalize output into chart-oriented JSON.
-- Keep API routes small so each route maps to one data product.
+A lightweight command-line wrapper for STM32 development on Linux, especially remote development, headless servers and keyboard-driven workflows.
 
-## Output
+## Features recorded in the repository
 
-The useful output is not raw catalog data. The endpoint should return position, magnitude and labeling fields in the shape needed by the visualization layer.`
+- Smart flashing: automatically detects .elf or *_new artifacts in build/ and flashes through OpenOCD.
+- Multi-series support: STM32F4, STM32L4 and similar targets through command arguments.
+- USB rescue command for common remote OpenOCD failure cases.
+- Bash and Zsh compatibility.
+- Parallel build through available CPU cores.
+
+## Resume use
+
+This project is useful as a developer-tooling example, but it should be secondary to the embedded display and robotics projects.`
+      },
+      {
+        title: "sky_monitor_api README",
+        meta: "source: GitHub README / FastAPI astronomy service",
+        repo: "sky_monitor_api",
+        body: `# sky_monitor_api README
+
+Source: https://github.com/12sqawdwq/sky_monitor_api
+
+## Service
+
+Sky Monitor API is a FastAPI backend for a location-aware stargazing assistant. It calculates visible bright stars, planets and known deep-sky objects from GPS coordinates and observation time.
+
+## Data path
+
+- HYG Database for star catalog data.
+- Skyfield and JPL DE421 ephemerides for planet positions.
+- SQLite catalog queries for local star data.
+- Messier / NGC metadata for deep-sky objects.
+- /sky/chart returns chart_x, chart_y and chart_radius for direct polar chart rendering.
+
+## Documentation value
+
+This is the clearest software/API project because the README records endpoints, project structure and deployment-facing details.`
+      },
+      {
+        title: "ForgeSpec-Studio README",
+        meta: "source: GitHub README / CAD automation",
+        repo: "ForgeSpec-Studio",
+        body: `# ForgeSpec-Studio README
+
+Source: https://github.com/12sqawdwq/ForgeSpec-Studio
+
+## Project
+
+ForgeSpec Studio turns natural-language engineering requirements into source-first parametric CAD packages, renders a browser preview and exports STEP, STL, Python and metadata files from a Python CAD backend.
+
+## Features recorded in the README
+
+- FastAPI backend with browser UI.
+- CadQuery STEP/STL export with runnable Python source snapshots.
+- Brief -> intent -> planner -> deterministic AssemblySpec pipeline.
+- Standards-backed part expansion for common fasteners.
+- Provider support plus deterministic fallback templates.
+- Job-scoped outputs with manifest and assurance report artifacts.
+
+## Resume positioning
+
+Use this as an AI-assisted engineering-tool project, but describe it through pipeline, export artifacts and validation rather than generic AI wording.`
+      },
+      {
+        title: "ANSYS_skill README",
+        meta: "source: GitHub README / CAE validation",
+        repo: "ANSYS_skill",
+        body: `# ANSYS_skill README
+
+Source: https://github.com/12sqawdwq/ANSYS_skill
+
+## Current focus
+
+The repository is evolving from an Ansys workflow skill into a simulation validation platform for a real engineering handoff path:
+
+Discovery / SpaceClaim geometry -> Workbench project -> Mechanical mesh/load/solve/evaluate/save
+
+## Acceptance criterion
+
+The repository states a strict criterion: the object existing is not enough. Mechanical must show contour, legend and non-empty Min/Max values.
+
+## Current layers
+
+- ansys-mechanical-mvp for Discovery-to-Mechanical minimum viable path.
+- cae-validation-platform for FEM/CFD review and platform refactor guidance.
+- src/ansys_skill_platform as a Python package skeleton for validation and CLI automation.`
+      },
+      {
+        title: "Resume source map",
+        meta: "source: local Markdown and LaTeX CV files",
+        repo: null,
+        body: `# Resume source map
+
+Source files in this folder:
+
+- CV_Ziyu_Zhao_optimized.md
+- CV_Ziyu_Zhao_latex.tex
+- CV_Ziyu_Zhao_final.pdf
+- Chinese CV PDF and Markdown source
+
+## Sections reflected on this site
+
+- Internship experience: InnoX Academy, ByteDance Volcano Engine Data Department, DeepBlue Technology, Sanyi 3D Technology.
+- Publication: BIBM 2025 conference paper, CCF-B.
+- Projects: engineering tools, embedded systems, digital design, computer systems and biomedical systems.
+- Skills: C/C++, Python, MATLAB, Verilog, STM32, ESP32, ROS2, FastAPI, ANSYS, SolidWorks, CadQuery, OpenOCD and CMake.`
       }
+    ];
+
+    const manualCommands = [
+      { cmd: "about", desc: "short profile and current focus" },
+      { cmd: "experience", desc: "internship timeline" },
+      { cmd: "publication", desc: "BIBM paper citation" },
+      { cmd: "projects", desc: "ranked project overview" },
+      { cmd: "embedded", desc: "embedded / robotics projects" },
+      { cmd: "chip", desc: "digital design and RTL work" },
+      { cmd: "docs", desc: "resume and source document links" },
+      { cmd: "read sky_monitor_api", desc: "open a real project document" },
+      { cmd: "repo MES204_lcd", desc: "open GitHub repository" },
+      { cmd: "contact", desc: "email and GitHub" },
+      { cmd: "clear", desc: "clear the assistant panel" }
+    ];
+
+    const presetQuestions = [
+      "about",
+      "projects",
+      "embedded",
+      "publication",
+      "read mes204_plus",
+      "read sky_monitor_api",
+      "docs"
     ];
 
     const fileSystem = {
@@ -1174,7 +1382,6 @@ The useful output is not raw catalog data. The endpoint should return position, 
       "/home/ziyu/projects": projects.map(project => project.name),
       "/home/ziyu/documents": [
         "CV_Ziyu_Zhao_final.pdf",
-        "CV_赵子羽_中文_latex_style.pdf",
         "CV_Ziyu_Zhao_optimized.md",
         "CV_Ziyu_Zhao_latex.tex"
       ],
@@ -1182,7 +1389,6 @@ The useful output is not raw catalog data. The endpoint should return position, 
     };
 
     let currentPath = "/home/ziyu";
-    let terminalReady = false;
     const log = document.getElementById("terminal-log");
     const input = document.getElementById("terminal-input");
     const promptPath = document.getElementById("prompt-path");
@@ -1298,6 +1504,21 @@ The useful output is not raw catalog data. The endpoint should return position, 
       document.getElementById("article").innerHTML = marked.parse(notes[activeIndex].body);
     }
 
+    function renderAssistantControls() {
+      const manual = document.getElementById("manual-list");
+      manual.innerHTML = manualCommands.map(item => `
+        <button class="manual-command" onclick="askCommand('${item.cmd.replaceAll("'", "\\'")}')">
+          <code>${item.cmd}</code>
+          <span>${item.desc}</span>
+        </button>
+      `).join("");
+
+      const presets = document.getElementById("preset-grid");
+      presets.innerHTML = presetQuestions.map(command => `
+        <button class="preset" onclick="askCommand('${command.replaceAll("'", "\\'")}')">${command}</button>
+      `).join("");
+    }
+
     function showView(id) {
       document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === id));
       document.querySelectorAll(".dock button[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === id));
@@ -1310,17 +1531,23 @@ The useful output is not raw catalog data. The endpoint should return position, 
       log.scrollTop = log.scrollHeight;
     }
 
+    function printMarkdown(markdown) {
+      const row = document.createElement("div");
+      row.className = "article";
+      row.innerHTML = marked.parse(markdown);
+      log.appendChild(row);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function askCommand(command) {
+      input.value = command;
+      runCommand(command);
+      input.value = "";
+      input.focus();
+    }
+
     function bootTerminal() {
       showView("dashboard");
-      document.getElementById("boot").style.display = "none";
-      document.getElementById("terminal-output").classList.add("active");
-      terminalReady = true;
-      if (!log.dataset.booted) {
-        log.dataset.booted = "true";
-        printLine(`<span class="blue">Ziyu's Creative Space</span> loaded. Type <span class="green">help</span> to list commands.`);
-        printLine(``);
-        runCommand("neofetch", true);
-      }
       input.focus();
     }
 
@@ -1339,69 +1566,129 @@ The useful output is not raw catalog data. The endpoint should return position, 
       return null;
     }
 
+    function matchProject(query) {
+      const lowered = query.toLowerCase();
+      return projects.find(project => lowered.includes(project.name.toLowerCase())) ||
+        projects.find(project => project.tags.some(tag => lowered.includes(tag.toLowerCase())));
+    }
+
+    function matchNote(query) {
+      const lowered = query.toLowerCase();
+      return notes.find(note => lowered.includes(note.repo?.toLowerCase())) ||
+        notes.find(note => lowered.includes(note.title.toLowerCase().replace(" readme", "")));
+    }
+
+    function responseForQuery(query) {
+      const q = query.toLowerCase();
+
+      if (["help", "manual", "man"].includes(q)) {
+        return manualCommands.map(item => `<span class="green">${item.cmd}</span> :: ${item.desc}`).join("<br>");
+      }
+
+      if (q === "about" || q.includes("who") || q.includes("profile") || q.includes("介绍")) {
+        return `Ziyu Zhao is a Microelectronics undergraduate at XJTLU. Current work spans embedded systems, robotics, digital design, CAE workflows and biomedical computing. Strongest public evidence: BIBM 2025 paper, STM32 LCD projects, AXI-Stream RTL notes, Sky Monitor API and CAE validation documentation.`;
+      }
+
+      if (q.includes("experience") || q.includes("intern") || q.includes("实习")) {
+        return `Internship timeline:<br><br><span class="green">InnoX Academy</span> - embedded / algorithm development intern, medical intraocular-pressure measurement device and ANSYS-based biomechanical analysis.<br><span class="green">ByteDance Volcano Engine Data Department</span> - technical operations intern, community Q&A, benchmark comparison and LLM agent product analysis.<br><span class="green">DeepBlue Technology</span> - embedded software engineer, wheeled biped robot gait control, Raspberry Pi 5 planning, SLAM and CAN communication.<br><span class="green">Sanyi 3D Technology</span> - embedded full-stack engineer, FDM printer assembly, SolidWorks motion system and Marlin firmware.`;
+      }
+
+      if (q.includes("publication") || q.includes("paper") || q.includes("bibm") || q.includes("论文")) {
+        return `Z. Zhao, H. S. Gan, Y. Cao, Z. A. Ocal, and I. O. Koska, "PAD-Former: A Two-Stage PI-RADS Classification Framework with Multi-Modal Anomaly Diffusion and Cross-Attention," in <em>Proc. 2025 IEEE International Conference on Bioinformatics and Biomedicine (BIBM)</em>, 2025, pp. 6162-6169. DOI: <a class="blue" target="_blank" href="https://doi.org/10.1109/BIBM66473.2025.11356522">10.1109/BIBM66473.2025.11356522</a>. BIBM conference paper; CCF-B.`;
+      }
+
+      if (q.includes("project") || q.includes("项目")) {
+        return projects.map((project, index) => `${index + 1}. <a class="blue" target="_blank" href="${project.href}">${project.name}</a> - ${project.desc}`).join("<br>");
+      }
+
+      if (q.includes("embedded") || q.includes("stm32") || q.includes("robot") || q.includes("嵌入")) {
+        return [`MES204_lcd`, `mes204_plus`, `openmv_green_tracking`, `stm32-cli-toolkit`]
+          .map(name => projects.find(project => project.name === name))
+          .filter(Boolean)
+          .map(project => `<a class="blue" target="_blank" href="${project.href}">${project.name}</a> - ${project.desc}`)
+          .join("<br>");
+      }
+
+      if (q.includes("chip") || q.includes("rtl") || q.includes("verilog") || q.includes("fpga") || q.includes("芯片")) {
+        const project = projects.find(item => item.name === "verilog_code_test");
+        return `<a class="blue" target="_blank" href="${project.href}">${project.name}</a> - ${project.desc}<br><br>Documented review points: DATA_WD parameters, valid/ready handshaking, keep/last signals, insertion state and buffering logic.`;
+      }
+
+      if (q === "docs" || q.includes("document") || q.includes("resume") || q.includes("简历")) {
+        return `<a class="blue" target="_blank" href="CV_Ziyu_Zhao_final.pdf">English CV PDF</a><br><a class="blue" target="_blank" href="CV_Ziyu_Zhao_optimized.md">English CV Markdown</a><br><a class="blue" target="_blank" href="CV_Ziyu_Zhao_latex.tex">LaTeX source</a><br><br>The notes page now uses local CV source and GitHub README content instead of placeholder articles.`;
+      }
+
+      if (q.includes("skill") || q.includes("stack") || q.includes("能力")) {
+        return `Programming and HDL: C/C++, Python, MATLAB, Verilog, JavaScript, HTML/CSS.<br>Embedded and robotics: STM32, ESP32, Raspberry Pi, OpenMV, ROS2, CAN, I2C, SPI, Bluetooth, PID control, sensor fusion, SLAM.<br>Engineering tools: ANSYS, SolidWorks, CadQuery, GNU Toolchain, OpenOCD, CMake, Git.`;
+      }
+
+      if (q.includes("contact") || q.includes("email") || q.includes("github") || q.includes("联系")) {
+        return `Email: <a class="blue" href="mailto:ziyuzhao2027@163.com">ziyuzhao2027@163.com</a><br>GitHub: <a class="blue" target="_blank" href="https://github.com/12sqawdwq">github.com/12sqawdwq</a>`;
+      }
+
+      if (q.startsWith("read ") || q.includes("readme")) {
+        const note = matchNote(q.replace("read ", ""));
+        if (note) return { markdown: note.body };
+      }
+
+      const note = matchNote(q);
+      if (note) return { markdown: note.body };
+
+      const project = matchProject(q);
+      if (project) return `<a class="blue" target="_blank" href="${project.href}">${project.name}</a><br>${project.desc}<br><br>Try <span class="green">read ${project.name}</span> if a README-derived document is available.`;
+
+      return `I can answer from the local CV source and linked repository READMEs. Try <span class="green">about</span>, <span class="green">projects</span>, <span class="green">embedded</span>, <span class="green">publication</span>, <span class="green">docs</span>, or <span class="green">read sky_monitor_api</span>.`;
+    }
+
     function runCommand(raw, silent = false) {
       const command = raw.trim();
       if (!command) return;
-      if (!silent) printLine(`<span class="prompt">ziyu@arch:${promptPath.textContent}$</span> ${command}`);
+      if (!silent) printLine(`<span class="prompt">ask@ziyu:${promptPath.textContent}$</span> ${command}`);
+
+      if (command === "clear") {
+        log.innerHTML = "";
+        return;
+      }
+
       const [cmd, ...args] = command.split(/\s+/);
       const rest = args.join(" ");
 
-      switch (cmd) {
-        case "help":
-          printLine(`<span class="green">help</span>       show commands`);
-          printLine(`<span class="green">ls</span>         list files`);
-          printLine(`<span class="green">cd [dir]</span>   change directory`);
-          printLine(`<span class="green">cat [file]</span>  print file`);
-          printLine(`<span class="green">docs</span>       open document panel`);
-          printLine(`<span class="green">notes</span>      open technical notes`);
-          printLine(`<span class="green">repo [name]</span> open repository`);
-          printLine(`<span class="green">neofetch</span>   show profile`);
-          printLine(`<span class="green">clear</span>      clear terminal`);
-          break;
-        case "ls": {
-          const target = normalizePath(rest);
-          const content = listPath(rest ? target : currentPath);
-          printLine(content ? content : `<span class="red">not a directory: ${rest || currentPath}</span>`);
-          break;
-        }
-        case "pwd":
-          printLine(currentPath);
-          break;
-        case "cd": {
-          const target = normalizePath(rest);
-          if (Array.isArray(fileSystem[target])) {
-            currentPath = target;
-            promptPath.textContent = currentPath === "/home/ziyu" ? "~" : currentPath.replace("/home/ziyu", "~");
-          } else {
-            printLine(`<span class="red">no such directory: ${rest}</span>`);
-          }
-          break;
-        }
-        case "cat":
-          catFile(rest);
-          break;
-        case "docs":
-          showView("config");
-          break;
-        case "notes":
-          showView("blog");
-          break;
-        case "repo":
-          openRepo(rest);
-          break;
-        case "neofetch":
-          printLine(`<span class="blue">       /\\        </span>  <span class="green">ziyu</span>@<span class="green">creative-space</span>`);
-          printLine(`<span class="blue">      /  \\       </span>  OS: Arch-style static site`);
-          printLine(`<span class="blue">     / /\\ \\      </span>  Focus: Embedded / Robotics / Digital Design`);
-          printLine(`<span class="blue">    / ____ \\     </span>  CV: English + Chinese PDFs`);
-          printLine(`<span class="blue">   /_/    \\_\\    </span>  GitHub: github.com/12sqawdwq`);
-          break;
-        case "clear":
-          log.innerHTML = "";
-          break;
-        default:
-          printLine(`<span class="red">command not found:</span> ${cmd}`);
+      if (cmd === "ls") {
+        const target = normalizePath(rest);
+        const content = listPath(rest ? target : currentPath);
+        printLine(content ? content : `<span class="red">not a directory: ${rest || currentPath}</span>`);
+        return;
       }
+
+      if (cmd === "pwd") {
+        printLine(currentPath);
+        return;
+      }
+
+      if (cmd === "cd") {
+        const target = normalizePath(rest);
+        if (Array.isArray(fileSystem[target])) {
+          currentPath = target;
+          promptPath.textContent = currentPath === "/home/ziyu" ? "~" : currentPath.replace("/home/ziyu", "~");
+        } else {
+          printLine(`<span class="red">no such directory: ${rest}</span>`);
+        }
+        return;
+      }
+
+      if (cmd === "cat") {
+        catFile(rest);
+        return;
+      }
+
+      if (cmd === "repo") {
+        openRepo(rest);
+        return;
+      }
+
+      const result = responseForQuery(command);
+      if (typeof result === "object" && result.markdown) printMarkdown(result.markdown);
+      else printLine(result);
     }
 
     function catFile(name) {
@@ -1412,7 +1699,7 @@ The useful output is not raw catalog data. The endpoint should return position, 
       if (name === "README.md") {
         printLine(`# Ziyu Zhao`);
         printLine(`Embedded systems, robotics, digital design and biomedical computing.`);
-        printLine(`Documents: CV_Ziyu_Zhao_final.pdf, CV_赵子羽_中文_latex_style.pdf`);
+        printLine(`Documents: CV_Ziyu_Zhao_final.pdf, CV_Ziyu_Zhao_optimized.md, CV_Ziyu_Zhao_latex.tex`);
         return;
       }
       if (name === "publication.txt") {
@@ -1428,7 +1715,7 @@ The useful output is not raw catalog data. The endpoint should return position, 
       }
       const note = notes.find(item => `${item.title.replaceAll(" ", "_")}.md` === name);
       if (note) {
-        printLine(note.body.replaceAll("#", ""));
+        printMarkdown(note.body);
         return;
       }
       printLine(`<span class="red">file not found:</span> ${name}`);
@@ -1446,9 +1733,7 @@ The useful output is not raw catalog data. The endpoint should return position, 
       }
       window.open(project.href, "_blank");
       printLine(`opened ${project.href}`);
-    }
-
-    input.addEventListener("keydown", event => {
+    }input.addEventListener("keydown", event => {
       if (event.key === "Enter") {
         runCommand(input.value);
         input.value = "";
@@ -1460,14 +1745,17 @@ The useful output is not raw catalog data. The endpoint should return position, 
     });
 
     document.addEventListener("keydown", event => {
-      if (event.key === "`" && !terminalReady) bootTerminal();
+      if (event.key === "`") bootTerminal();
     });
 
     updateClock();
     setInterval(updateClock, 30000);
     initParticles();
     renderProjects();
+    renderAssistantControls();
     renderNotes();
+    printLine(`<span class="blue">Ziyu's Creative Space assistant</span> is ready. Use the presets or type <span class="green">help</span>.`);
+    runCommand("about", true);
   </script>
 </body>
 </html>
