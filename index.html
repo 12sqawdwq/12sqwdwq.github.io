@@ -1632,15 +1632,7 @@ Source files in this folder:
       const activeNote = notes[activeIndex];
       article.innerHTML = marked.parse(activeNote.body);
       enhanceArticle(article);
-      if (activeNote.url) {
-        const base = activeNote.url.split("/").slice(0, -1).join("/");
-        article.querySelectorAll("img").forEach(img => {
-          const src = img.getAttribute("src") || "";
-          if (src && !src.startsWith("http") && !src.startsWith("data:") && !src.startsWith("/")) {
-            img.src = `${base}/${src}`;
-          }
-        });
-      }
+      resolveArticleAssets(article, activeNote.url);
     }
 
     function enhanceArticle(article) {
@@ -1656,6 +1648,17 @@ Source files in this folder:
         if (link.hostname && link.hostname !== location.hostname) {
           link.target = "_blank";
           link.rel = "noopener noreferrer";
+        }
+      });
+    }
+
+    function resolveArticleAssets(article, sourceUrl) {
+      if (!sourceUrl) return;
+      const base = sourceUrl.split("/").slice(0, -1).join("/");
+      article.querySelectorAll("img").forEach(img => {
+        const src = img.getAttribute("src") || "";
+        if (src && !src.startsWith("http") && !src.startsWith("data:") && !src.startsWith("/")) {
+          img.src = `${base}/${src}`;
         }
       });
     }
@@ -1687,11 +1690,12 @@ Source files in this folder:
       log.scrollTop = log.scrollHeight;
     }
 
-    function printMarkdown(markdown) {
+    function printMarkdown(markdown, sourceUrl = "") {
       const row = document.createElement("div");
       row.className = "article";
       row.innerHTML = marked.parse(markdown);
       enhanceArticle(row);
+      resolveArticleAssets(row, sourceUrl);
       log.appendChild(row);
       log.scrollTop = log.scrollHeight;
     }
@@ -1786,11 +1790,11 @@ Source files in this folder:
 
       if (q.startsWith("read ") || q.includes("readme")) {
         const note = matchNote(q.replace("read ", ""));
-        if (note) return { markdown: note.body };
+        if (note) return { markdown: note.body, sourceUrl: note.url };
       }
 
       const note = matchNote(q);
-      if (note) return { markdown: note.body };
+      if (note) return { markdown: note.body, sourceUrl: note.url };
 
       const project = matchProject(q);
       if (project) return `<a class="blue" target="_blank" href="${project.href}">${project.name}</a><br>${project.desc}<br><br>Try <span class="green">read ${project.name}</span> if a README-derived document is available.`;
@@ -1845,7 +1849,7 @@ Source files in this folder:
       }
 
       const result = responseForQuery(command);
-      if (typeof result === "object" && result.markdown) printMarkdown(result.markdown);
+      if (typeof result === "object" && result.markdown) printMarkdown(result.markdown, result.sourceUrl);
       else printLine(result);
     }
 
@@ -1873,7 +1877,7 @@ Source files in this folder:
       }
       const note = notes.find(item => `${item.title.replaceAll(" ", "_")}.md` === name);
       if (note) {
-        printMarkdown(note.body);
+        printMarkdown(note.body, note.url);
         return;
       }
       printLine(`<span class="red">file not found:</span> ${name}`);
