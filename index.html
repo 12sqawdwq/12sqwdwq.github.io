@@ -813,6 +813,7 @@
     }
 
     .note-item h3 {
+      color: var(--text);
       font-size: 0.96rem;
       margin-bottom: 7px;
     }
@@ -1054,7 +1055,7 @@
           <p class="plain">Resume and source files are kept here for direct reading or download.</p>
           <button class="blog-jump" onclick="showView('blog')">
             <strong><i class="ph-fill ph-notebook"></i> open docs blog</strong>
-            <span>Read project README notes, CV source map, and technical documentation.</span>
+            <span>Read full local Markdown docs: embedded, CAE, cough audio, CAD automation, learning plan, and simulation records.</span>
           </button>
           <div class="doc-list">
             <a class="doc-link" href="CV_Ziyu_Zhao_final.pdf" target="_blank"><span>CV_Ziyu_Zhao_final.pdf</span><i class="ph-fill ph-arrow-square-out"></i></a>
@@ -1160,6 +1161,7 @@
     <a href="https://github.com/12sqawdwq" target="_blank" title="GitHub"><i class="ph-fill ph-github-logo"></i></a>
   </nav>
 
+  <script src="docs-data.js"></script>
   <script>
     const projects = [
       {
@@ -1212,7 +1214,7 @@
       }
     ];
 
-    const notes = [
+    let notes = window.DOCS_DATA || [
       {
         title: "MES204_lcd README",
         meta: "source: GitHub README / STM32 LCD1602",
@@ -1411,7 +1413,9 @@ Source files in this folder:
       { cmd: "embedded", desc: "embedded / robotics projects" },
       { cmd: "chip", desc: "digital design and RTL work" },
       { cmd: "docs", desc: "resume and source document links" },
-      { cmd: "read sky_monitor_api", desc: "open a real project document" },
+      { cmd: "read mes204-lcd", desc: "open full embedded README" },
+      { cmd: "read cough-project", desc: "open cough audio research doc" },
+      { cmd: "read 270-day-learning-plan", desc: "open self-learning roadmap" },
       { cmd: "repo MES204_lcd", desc: "open GitHub repository" },
       { cmd: "contact", desc: "email and GitHub" },
       { cmd: "clear", desc: "clear the assistant panel" }
@@ -1422,8 +1426,9 @@ Source files in this folder:
       "projects",
       "embedded",
       "publication",
-      "read mes204_plus",
-      "read sky_monitor_api",
+      "read mes204-lcd",
+      "read cough-project",
+      "read 270-day-learning-plan",
       "docs"
     ];
 
@@ -1551,7 +1556,18 @@ Source files in this folder:
           <p>${note.meta}</p>
         </button>
       `).join("");
-      document.getElementById("article").innerHTML = marked.parse(notes[activeIndex].body);
+      const article = document.getElementById("article");
+      const activeNote = notes[activeIndex];
+      article.innerHTML = marked.parse(activeNote.body);
+      if (activeNote.url) {
+        const base = activeNote.url.split("/").slice(0, -1).join("/");
+        article.querySelectorAll("img").forEach(img => {
+          const src = img.getAttribute("src") || "";
+          if (src && !src.startsWith("http") && !src.startsWith("data:") && !src.startsWith("/")) {
+            img.src = `${base}/${src}`;
+          }
+        });
+      }
     }
 
     function renderAssistantControls() {
@@ -1624,7 +1640,8 @@ Source files in this folder:
 
     function matchNote(query) {
       const lowered = query.toLowerCase();
-      return notes.find(note => lowered.includes(note.repo?.toLowerCase())) ||
+      return notes.find(note => note.slug && lowered.includes(note.slug.toLowerCase())) ||
+        notes.find(note => note.repo && lowered.includes(note.repo.toLowerCase())) ||
         notes.find(note => lowered.includes(note.title.toLowerCase().replace(" readme", "")));
     }
 
@@ -1665,7 +1682,7 @@ Source files in this folder:
       }
 
       if (q === "docs" || q.includes("document") || q.includes("resume") || q.includes("简历")) {
-        return `<a class="blue" target="_blank" href="CV_Ziyu_Zhao_final.pdf">English CV PDF</a><br><a class="blue" target="_blank" href="CV_Ziyu_Zhao_optimized.md">English CV Markdown</a><br><a class="blue" target="_blank" href="CV_Ziyu_Zhao_latex.tex">LaTeX source</a><br><br>The notes page now uses local CV source and GitHub README content instead of placeholder articles.`;
+        return `<a class="blue" target="_blank" href="CV_Ziyu_Zhao_final.pdf">English CV PDF</a><br><a class="blue" target="_blank" href="CV_Ziyu_Zhao_optimized.md">English CV Markdown</a><br><a class="blue" target="_blank" href="CV_Ziyu_Zhao_latex.tex">LaTeX source</a><br><br>The docs blog now loads ${notes.length} local Markdown documents from project, simulation, research, and self-learning folders. Try <span class="green">read mes204-lcd</span>, <span class="green">read cough-project</span>, or <span class="green">read 270-day-learning-plan</span>.`;
       }
 
       if (q.includes("skill") || q.includes("stack") || q.includes("能力")) {
@@ -1806,6 +1823,7 @@ Source files in this folder:
     renderNotes();
     printLine(`<span class="blue">Ziyu's Creative Space assistant</span> is ready. Use the presets or type <span class="green">help</span>.`);
     runCommand("about", true);
+    if (location.hash === "#blog") showView("blog");
   </script>
 </body>
 </html>
